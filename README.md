@@ -26,7 +26,7 @@
 [The Four Color Theorem](http://people.math.gatech.edu/~thomas/FC/fourcolor.html)  
 Neil Robertson, Daniel P. Sanders, Paul Seymour and Robin Thomasらによる、  
 オリジナルの証明を改良したもの。C言語で書かれている。  
-本Repositoryでは、これをHaskellに移植することを目標にする。  
+本Repositoryでは、これをF#に移植することを目標にする。  
 
 ### 「四色定理の証明」　山森千絵,　指導教員：杉浦洋  
 [link](http://www.st.nanzan-u.ac.jp/info/gr-thesis/ms/2009/06mi203.pdf)  
