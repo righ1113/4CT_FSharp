@@ -41,9 +41,9 @@ module Re =
     let mutable maxint = 0
     let mutable maxes  = 0
     let max = Array.replicate MVERTS 0
-    for x in (ring + 1) .. verts do
-      (* First we find all vertices from the interior that meet the "done"
-         vertices in an interval, and write them in max[1] .. max[maxes] *)
+    for _ in (ring + 1) .. (verts) do
+      // First we find all vertices from the interior that meet the "done"
+      // vertices in an interval, and write them in max[1] .. max[maxes]
 
       let rec loop1 v =
       //for (v = ring + 1; v <= verts; v++) {
@@ -51,19 +51,20 @@ module Re =
           if done0.[v] then
             loop1 (v + 1)
           else
-            let inter = ininterval graph.[v] done0
+            let inter = ininterval graph.[v+1] done0
             if inter > maxint then
               maxint  <- inter
               maxes   <- 1
               max.[1] <- v
             else
               if inter = maxint then
-                maxes <- maxes + 1
-                max.[maxes] <- v
+                if maxes+1 < max.Length then
+                  maxes <- maxes + 1
+                  max.[maxes] <- v
+                else ()
               else ()
             loop1 (v + 1)
-        else
-          ()
+        else ()
       loop1 (ring + 1)
       // for v bracket
 
@@ -72,47 +73,41 @@ module Re =
       let mutable maxdeg = 0
       let mutable best   = 0
       for h  in 1..maxes do
-        d <- graph.[max.[h]].[0]
-        if d > maxdeg
-          then
-            maxdeg <- d
-            best   <- max.[h]
-          else ()
+        d <- graph.[max.[h]+1].[0+1]
+        if d > maxdeg then
+          maxdeg <- d
+          best   <- max.[h]
+        else ()
       // So now, the vertex "best" will be the next vertex to be done
 
-      let grav = graph.[best]
-      d <- grav.[0]
+      let grav = graph.[best+1]
+      d <- grav.[0+1]
       let mutable first = 1
-      let mutable previous = done0.[grav.[d]]
+      let mutable previous = done0.[grav.[d+1]]
       let rec loop2 () =
-        if previous || not done0.[grav.[first]] then
+        if previous || not done0.[grav.[first+1]] then
           first    <- first + 1
-          previous <- done0.[grav.[first]]
-          if first > d then
+          previous <- done0.[grav.[first+1]]
+          if first >= d then
             first <- 1
             ()
-          else
-            loop2 ()
-        else
-         ()
+          else loop2 ()
+        else ()
       loop2 ()
 
       let mutable h = 0
       let rec loop3 (index : int) =
-        if done0.[grav.[h]] then
-          edgeno.[best].[grav.[h]] <- term
-          edgeno.[grav.[h]].[best] <- term
+        if done0.[grav.[h+1]] then
+          edgeno.[best].[grav.[h+1]] <- term
+          edgeno.[grav.[h+1]].[best] <- term
           term <- term - 1
           if h = d then
-            if first = 1 then
-                ()
+            if first = 1 then ()
             else
               h <- 0
               loop3 (index + 1)
-          else
-            loop3 (index + 1)
-        else
-         ()
+          else loop3 (index + 1)
+        else ()
       loop3 first
       done0.[best] <- true
     // This eventually lists all the internal edges of the configuration
@@ -192,7 +187,7 @@ module Re =
       true
     with
       | MyException str -> printfn "exception: %s" str; false
-      | _               -> printfn "unknown";           false
+      | _               -> printfn "unknown exception"; false
 
 
 

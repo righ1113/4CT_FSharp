@@ -7,7 +7,7 @@ module Lib =
   type TpConfmat = JsonProvider<"[[[1]]]">
 
   let readFileGoodConfsR =
-    File.ReadAllText "../../4ctdata/goodConfs.txt"
+    File.ReadAllText "4ctdata/goodConfs.txt"
     |> TpConfmat.Parse
     //printfn "%d" hoge2.[0].[0].[1]
     //let hoge = str.Split ' '
