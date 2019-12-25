@@ -20,7 +20,35 @@ module Re =
   exception MyException of string
 
   // 1. strip()
-  let ininterval graphV done0 =
+  let ininterval grav done0 =
+    (*let d = grav.[0+1]
+
+    let first = 1 //for (first = 1; (first < d) && (not done0.[grav.[first]]); first++);
+    if first = d then
+      if done0.[grav.[d+1]] then 1 else 0
+    else
+      let last = first //for (last = first; (last < d) && (done0[grav[last + 1]]); last++);
+      let mutable length = last - first + 1
+      if last = d then
+        length
+      else
+        if first > 1 then
+          for (j = last + 2; j <= d; j++)
+            if done0.[grav.[j+1]] then
+              return 0
+            else ()
+          length
+        else
+          let mutable worried = 0
+          for (j = last + 2; j <= d; j++) {
+            if done0.[grav.[j+1]] then
+              length <- length + 1
+              worried <- 1
+            else
+              if worried then
+                return ((long) 0);
+              else ()
+          length*)
     1
   let strip (graph : int array array) =
     let verts  = graph.[0+1].[0]
@@ -46,7 +74,6 @@ module Re =
       // vertices in an interval, and write them in max[1] .. max[maxes]
 
       let rec loop1 v =
-      //for (v = ring + 1; v <= verts; v++) {
         if v <= verts then
           if done0.[v] then
             loop1 (v + 1)
@@ -66,7 +93,6 @@ module Re =
             loop1 (v + 1)
         else ()
       loop1 (ring + 1)
-      // for v bracket
 
       // From the terms in max we choose the one of maximum degree
       let mutable d      = 0
@@ -80,7 +106,7 @@ module Re =
         else ()
       // So now, the vertex "best" will be the next vertex to be done
 
-      let grav = graph.[best+1]
+      let grav = graph.[best+3]
       d <- grav.[0+1]
       let mutable first = 1
       let mutable previous = done0.[grav.[d+1]]
@@ -109,6 +135,7 @@ module Re =
           else loop3 (index + 1)
         else ()
       loop3 first
+
       done0.[best] <- true
     // This eventually lists all the internal edges of the configuration
 
@@ -117,6 +144,44 @@ module Re =
     let r6 = setl (items) 100 [0..4]
     printfn "%A" r6 *)
 
+    // ★★★ stripSub3
+    // Now we must list the edges between the interior and the ring
+    for _ in 1..ring do
+      maxint <- 0
+
+      let mutable best = 0
+      let rec loop4 v =
+        if v <= ring then
+          if done0.[v] then
+            loop4 (v + 1)
+          else
+            let u       = if v > 1    then v - 1 else ring
+            let w       = if v < ring then v + 1 else 1
+            let doneInt = if done0.[u] || done0.[w] then 1 else 0
+            let inter   = 3 * graph.[v+1].[0] + 4 * doneInt
+            if inter > maxint then
+              maxint <- inter
+              best   <- v
+            else ()
+            loop4 (v + 1)
+        else ()
+      loop4 1
+
+      let grav = graph.[best+3]
+      let u    = if best > 1 then best - 1 else ring
+      if done0.[u] then
+        for h in (grav.[0+1] - 1) .. -1 .. 2 do
+          edgeno.[best].[grav.[h+1]] <- term
+          edgeno.[grav.[h+1]].[best] <- term
+          term <- term - 1
+      else
+        for h in 2..(grav.[0+1] - 1) do
+          edgeno.[best].[grav.[h+1]] <- term
+          edgeno.[grav.[h+1]].[best] <- term
+          term <- term - 1
+      done0.[best] <- true
+
+    // return
     edgeno : TpEdgeno
 
   // 2. findangles()
@@ -180,8 +245,7 @@ module Re =
         // 5. checkContract()
         (* This verifies that the set claimed to be a contract for the
            configuration really is. *)
-        let z = checkContract live2 nlive2 diffangle sameangle contract POWER
-        ()
+        checkContract live2 nlive2 diffangle sameangle contract POWER
 
       //raise (MyException ("test error" + (Convert.ToString 7))) //|> ignore
       true
