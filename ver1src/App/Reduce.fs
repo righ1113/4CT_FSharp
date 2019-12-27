@@ -21,43 +21,13 @@ module Re =
   exception MyException of string
 
   // 1. strip()
-  let ininterval grav done0 =
-    (*let d = grav.[0+1]
-
-    let first = 1 //for (first = 1; (first < d) && (not done0.[grav.[first]]); first++);
-    if first = d then
-      if done0.[grav.[d+1]] then 1 else 0
-    else
-      let last = first //for (last = first; (last < d) && (done0[grav[last + 1]]); last++);
-      let mutable length = last - first + 1
-      if last = d then
-        length
-      else
-        if first > 1 then
-          for (j = last + 2; j <= d; j++)
-            if done0.[grav.[j+1]] then
-              return 0
-            else ()
-          length
-        else
-          let mutable worried = 0
-          for (j = last + 2; j <= d; j++) {
-            if done0.[grav.[j+1]] then
-              length <- length + 1
-              worried <- 1
-            else
-              if worried then
-                return ((long) 0);
-              else ()
-          length*)
-    1
   let strip (graph : int array array) =
     let verts  = graph.[0+1].[0]
     let ring   = graph.[0+1].[1] // ring-size
     let edgeno = Array.replicate EDGES (Array.replicate EDGES 0)
 
     // ★★★ stripSub1
-    (*let mutable u = 0
+    let mutable u = 0
     for v in 1..ring do
       u <- if v > 1 then v - 1 else ring
       edgeno.[u].[v] <- v
@@ -67,77 +37,8 @@ module Re =
     let mutable term  = 3 * (verts - 1) - ring
 
     // ★★★ stripSub2
-    let mutable maxint = 0
-    let mutable maxes  = 0
-    let max = Array.replicate MVERTS 0
-    for _ in (ring + 1) .. (verts) do
-      // First we find all vertices from the interior that meet the "done"
-      // vertices in an interval, and write them in max[1] .. max[maxes]
-
-      let rec loop1 v =
-        if v <= verts then
-          if done0.[v] then
-            loop1 (v + 1)
-          else
-            let inter = ininterval graph.[v+1] done0
-            if inter > maxint then
-              maxint  <- inter
-              maxes   <- 1
-              max.[1] <- v
-            else
-              if inter = maxint then
-                if maxes+1 < max.Length then
-                  maxes <- maxes + 1
-                  max.[maxes] <- v
-                else ()
-              else ()
-            loop1 (v + 1)
-        else ()
-      loop1 (ring + 1)
-
-      // From the terms in max we choose the one of maximum degree
-      let mutable d      = 0
-      let mutable maxdeg = 0
-      let mutable best   = 0
-      for h  in 1..maxes do
-        d <- graph.[max.[h]+1].[0+1]
-        if d > maxdeg then
-          maxdeg <- d
-          best   <- max.[h]
-        else ()
-      // So now, the vertex "best" will be the next vertex to be done
-
-      let grav = graph.[best+3]
-      d <- grav.[0+1]
-      let mutable first = 1
-      let mutable previous = done0.[grav.[d+1]]
-      let rec loop2 () =
-        if previous || not done0.[grav.[first+1]] then
-          first    <- first + 1
-          previous <- done0.[grav.[first+1]]
-          if first >= d then
-            first <- 1
-            ()
-          else loop2 ()
-        else ()
-      loop2 ()
-
-      let mutable h = 0
-      let rec loop3 (index : int) =
-        if done0.[grav.[h+1]] then
-          edgeno.[best].[grav.[h+1]] <- term
-          edgeno.[grav.[h+1]].[best] <- term
-          term <- term - 1
-          if h = d then
-            if first = 1 then ()
-            else
-              h <- 0
-              loop3 (index + 1)
-          else loop3 (index + 1)
-        else ()
-      loop3 first
-
-      done0.[best] <- true*)
+    // edgeno, done0に破壊的代入をおこなう
+    term <- LibReduceStrip.StripSub2 (MVERTS, graph, verts, ring, edgeno, done0, term)
     // This eventually lists all the internal edges of the configuration
 
     (* let r4 = setl (_2 << _1) 42 ("hello", ("world", "!!!"))
@@ -147,7 +48,8 @@ module Re =
 
     // ★★★ stripSub3
     // Now we must list the edges between the interior and the ring
-    (*for _ in 1..ring do
+    let mutable maxint = 0
+    for _ in 1..ring do
       maxint <- 0
 
       let mutable best = 0
@@ -180,7 +82,7 @@ module Re =
           edgeno.[best].[grav.[h+1]] <- term
           edgeno.[grav.[h+1]].[best] <- term
           term <- term - 1
-      done0.[best] <- true*)
+      done0.[best] <- true
 
     // return
     edgeno : TpEdgeno
@@ -209,9 +111,6 @@ module Re =
   let reduce =
     try
       printfn "Reduce.fs"
-
-      let ret = LibCSStrip.Add (2, 3)
-      printfn "2+3=%d" ret
 
       let graphs = LibFS.readFileGoodConfsR
       printfn "%d" graphs.[1].[1].[0]
