@@ -1,6 +1,6 @@
 namespace Reduce
 
-open System
+//open System
 open System.Diagnostics
 open LibraryFS
 //open FSharpPlus.Lens
@@ -95,13 +95,24 @@ module Re =
     for i in 1..contract.[0] do
       let u = graph.[1+1].[2 * i - 1]
       let v = graph.[1+1].[2 * i]
-      Debug.Assert((edgeno.[u].[v] >= 1),
+      Debug.Assert((edgeno.[u].[v+1] >= 1),
         "         ***  ERROR: CONTRACT CONTAINS NON-EDGE  ***\n\n")
-      contract.[edgeno.[u].[v]] <- 1
+      contract.[edgeno.[u].[v+1]] <- 1
 
     let angle     = Array.replicate EDGES (Array.replicate 5 0)
     let diffangle = Array.replicate EDGES (Array.replicate 5 0)
     let sameangle = Array.replicate EDGES (Array.replicate 5 0)
+    diffangle.[0].[0] <- 0 //graph.[0+1].[0]
+    diffangle.[0].[1] <- graph.[0+1].[1]
+    diffangle.[0].[2] <- EDGES
+    angle.[0].[0]     <- diffangle.[0].[0]
+    angle.[0].[1]     <- diffangle.[0].[1]
+    angle.[0].[2]     <- diffangle.[0].[2]
+
+    // ★★★ findanglesSub2
+    // angle, diffangle, sameangleに破壊的代入をおこなう
+    LibReduceAngle.FindanglesSub2 (graph, edgeno, contract, angle, diffangle, sameangle)
+
     (angle, diffangle, sameangle, contract) : TpAngle * TpAngle * TpAngle * int array
 
   // 3. findlive()

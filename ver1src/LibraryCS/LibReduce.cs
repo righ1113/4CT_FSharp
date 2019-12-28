@@ -1,4 +1,4 @@
-using System;
+//using System;
 using System.Diagnostics;
 
 namespace LibraryCS {
@@ -41,7 +41,6 @@ namespace LibraryCS {
       int[] max = new int[MVERTS];
       bool previous;
 
-      //Debug.Assert((1>2), "hugaguga!");
       for (x = ring + 1; x <= verts; x++) {
         /* First we find all vertices from the interior that meet the "done"
         * vertices in an interval, and write them in max[1] .. max[maxes] */
@@ -98,6 +97,52 @@ namespace LibraryCS {
       /* This eventually lists all the internal edges of the configuration */
 
       return term;
+    }
+  }
+  public class LibReduceAngle {
+    public static void FindanglesSub2(
+        int[][] graph, int[][] edgeno, int[] contract, int[][] angle, int[][] diffangle, int[][] sameangle) {
+      int v, h, i, u, w, a, b, c;
+      int d;
+
+      for (v = 1; v <= graph[0+1][0]; v++) {
+        for (h = 1; h <= graph[v+2][0]; h++) {
+
+          if ((v <= graph[0+1][1]) && (h == graph[v+2][0]))
+            continue;
+          if (h >= graph[v+2].Length)
+            break;
+
+          i = (h < graph[v+2].Length - 1) ? h + 1 : 1;
+          u = graph[v+2][h];
+          w = graph[v+2][i];
+          a = edgeno[v][w+1];
+          b = edgeno[u][w+1];
+          c = edgeno[u][v+1];
+
+          // どっちかが0なら通過
+          Debug.Assert((contract[a]==0 || contract[b]==0),
+            "         ***  ERROR: CONTRACT IS NOT SPARSE  ***\n\n");
+
+          if (a > c) {
+            d = (angle[c][0] >= 4) ? 4 : ++angle[c][0];
+            angle[c][d] = a;
+            if ((contract[a] != 0) && (contract[b] != 0) && (contract[c] != 0))
+                diffangle[c][++diffangle[c][0]] = a;
+            if (contract[b] != 0)
+                sameangle[c][++sameangle[c][0]] = a;
+          }
+          if (b > c) {
+            d = (angle[c][0] >= 4) ? 4 : ++angle[c][0];
+            angle[c][d] = b;
+            if ((contract[a] != 0) && (contract[b] != 0) && (contract[c] != 0))
+                diffangle[c][++diffangle[c][0]] = b;
+            if (contract[a] != 0)
+                sameangle[c][++sameangle[c][0]] = b;
+          }
+        }
+      }
+
     }
   }
 }
