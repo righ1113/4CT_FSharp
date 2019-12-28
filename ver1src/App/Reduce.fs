@@ -1,6 +1,7 @@
 namespace Reduce
 
 open System
+open System.Diagnostics
 open LibraryFS
 //open FSharpPlus.Lens
 open LibraryCS
@@ -17,8 +18,6 @@ module Re =
 
   type TpAngle      = int array array
   type TpEdgeno     = int array array
-
-  exception MyException of string
 
   // 1. strip()
   let strip (graph : int array array) =
@@ -84,15 +83,25 @@ module Re =
           term <- term - 1
       done0.[best] <- true
 
-    // return
-    edgeno : TpEdgeno
+    edgeno : TpEdgeno // return
 
   // 2. findangles()
-  let findangles graph edgeno =
+  let findangles (graph : int array array) (edgeno : int array array) =
+    let edge      = 3 * graph.[0+1].[0] - 3 - graph.[0+1].[1]
+
+    let contract  = Array.replicate (EDGES + 1) 0
+    contract.[0]     <- graph.[1+1].[0] // number of edges in contract
+    contract.[EDGES] <- graph.[0+1].[3]
+    for i in 1..contract.[0] do
+      let u = graph.[1+1].[2 * i - 1]
+      let v = graph.[1+1].[2 * i]
+      Debug.Assert((edgeno.[u].[v] >= 1),
+        "         ***  ERROR: CONTRACT CONTAINS NON-EDGE  ***\n\n")
+      contract.[edgeno.[u].[v]] <- 1
+
     let angle     = Array.replicate EDGES (Array.replicate 5 0)
     let diffangle = Array.replicate EDGES (Array.replicate 5 0)
     let sameangle = Array.replicate EDGES (Array.replicate 5 0)
-    let contract  = Array.replicate (EDGES + 1) 0
     (angle, diffangle, sameangle, contract) : TpAngle * TpAngle * TpAngle * int array
 
   // 3. findlive()
@@ -109,52 +118,47 @@ module Re =
     ()
 
   let reduce =
-    try
-      printfn "Reduce.fs"
+    printfn "Reduce.fs"
 
-      let graphs = LibFS.readFileGoodConfsR
-      printfn "%d" graphs.[1].[1].[0]
+    let graphs = LibFS.readFileGoodConfsR
+    printfn "%d" graphs.[1].[1].[0]
 
-      let mutable i = 0
-      for graph in Array.take 3 graphs do
-        printfn "%d" i
-        i <- i + 1
+    let mutable i = 0
+    for graph in Array.take 3 graphs do
+      printfn "%d" i
+      i <- i + 1
 
-        // 1. strip()
-        let edgeno = strip graph
+      // 1. strip()
+      let edgeno = strip graph
 
-        // 2. findangles()
-        (* "findangles" fills in the arrays "angle","diffangle","sameangle" and
-            "contract" from the input "graph". "angle" will be used to compute
-            which colourings of the ring edges extend to the configuration; the
-            others will not be used unless a contract is specified, and if so
-            they will be used in "checkcontract" below to verify that the
-            contract is correct. *)
-        let (angle, diffangle, sameangle, contract) = findangles graph edgeno
+      // 2. findangles()
+      (* "findangles" fills in the arrays "angle","diffangle","sameangle" and
+          "contract" from the input "graph". "angle" will be used to compute
+          which colourings of the ring edges extend to the configuration; the
+          others will not be used unless a contract is specified, and if so
+          they will be used in "checkcontract" below to verify that the
+          contract is correct. *)
+      let (angle, diffangle, sameangle, contract) = findangles graph edgeno
 
-        // 3. findlive()
-        let ring   = graph.[0+1].[1] // ring-size
-        let ncodes = POWER.[ring + 1] / 2 // number of codes of colorings of R
-        let live0  = List.replicate ncodes 1
-        let real0  = List.replicate (SIMATCHNUMBER.[MAXRING] / 8 + 2) 255
-        let nchar  = SIMATCHNUMBER.[ring] / 8 + 1
-        let (nlive1, live1) = findlive live0 ncodes angle POWER graph.[0+1].[2]
+      // 3. findlive()
+      let ring   = graph.[0+1].[1] // ring-size
+      let ncodes = POWER.[ring + 1] / 2 // number of codes of colorings of R
+      let live0  = List.replicate ncodes 1
+      let real0  = List.replicate (SIMATCHNUMBER.[MAXRING] / 8 + 2) 255
+      let nchar  = SIMATCHNUMBER.[ring] / 8 + 1
+      let (nlive1, live1) = findlive live0 ncodes angle POWER graph.[0+1].[2]
 
-        // 4. updatelive()
-        // computes {\cal M}_{i+1} from {\cal M}_i, updates the bits of "real"
-        let (nlive2, live2) = updatelive ring real0 POWER live1 nchar ncodes nlive1
-        // computes {\cal C}_{i+1} from {\cal C}_i, updates "live"
+      // 4. updatelive()
+      // computes {\cal M}_{i+1} from {\cal M}_i, updates the bits of "real"
+      let (nlive2, live2) = updatelive ring real0 POWER live1 nchar ncodes nlive1
+      // computes {\cal C}_{i+1} from {\cal C}_i, updates "live"
 
-        // 5. checkContract()
-        (* This verifies that the set claimed to be a contract for the
-           configuration really is. *)
-        checkContract live2 nlive2 diffangle sameangle contract POWER
+      // 5. checkContract()
+      (* This verifies that the set claimed to be a contract for the
+         configuration really is. *)
+      checkContract live2 nlive2 diffangle sameangle contract POWER
 
-      //raise (MyException ("test error" + (Convert.ToString 7))) //|> ignore
-      true
-    with
-      | MyException str -> printfn "MyException: %s" str; false
-      | _               -> printfn "unknown Exception";   false
+    true
 
 
 

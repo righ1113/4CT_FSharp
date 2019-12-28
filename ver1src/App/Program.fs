@@ -1,3 +1,10 @@
+// ◆author: righ1113
+// ◆VSCodeでの動かし方
+// 0. Library.fsのFile.ReadAllText()をVSCode用にする
+// 1. $ cd ver1src
+// 2. $ code .
+// 3. $ dotnet run --project App/App.fsproj
+
 open System
 open Reduce
 

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 
 namespace LibraryCS {
   public class LibReduce {
@@ -40,6 +41,7 @@ namespace LibraryCS {
       int[] max = new int[MVERTS];
       bool previous;
 
+      //Debug.Assert((1>2), "hugaguga!");
       for (x = ring + 1; x <= verts; x++) {
         /* First we find all vertices from the interior that meet the "done"
         * vertices in an interval, and write them in max[1] .. max[maxes] */
