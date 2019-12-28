@@ -144,6 +144,43 @@ namespace LibraryCS {
       }
 
     }
+    public static void FindanglesSub3(int MVERTS, int[][] graph, int[] contract) {
+      int v, i, j, u, a;
+      bool[] neighbour = new bool[MVERTS];
+
+      /* checking that there is a triad */
+      if (contract[0] < 4)
+        return;
+
+      for (v = graph[0+1][1] + 1; v <= graph[0+1][0]; v++) {
+        /* v is a candidate triad */
+        for (a = 0, i = 1; i <= graph[v+2][0]; i++) {
+          u = graph[v+1][i];
+          for (j = 5; j <= 12; j++)
+            if (u == graph[0+1][j]) {
+                a++;
+                break;
+            }
+        }
+
+        if (a < 3)
+          continue;
+        if (graph[v+2][0] >= 6)
+          return;
+
+        for (u = 1; u <= graph[0+1][0]; u++)
+          neighbour[u] = false;
+        for (i = 1; i <= graph[v+2][0]; i++)
+          neighbour[graph[v+2][i]] = true;
+        for (j = 5; j <= 12; j++) {
+          if (!neighbour[graph[0+1][j]])
+            return;
+        }
+      }
+
+      Debug.Assert(false,
+        "         ***  ERROR: CONTRACT HAS NO TRIAD  ***\n\n");
+    }
   }
 }
 

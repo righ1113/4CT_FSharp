@@ -113,6 +113,9 @@ module Re =
     // angle, diffangle, sameangleに破壊的代入をおこなう
     LibReduceAngle.FindanglesSub2 (graph, edgeno, contract, angle, diffangle, sameangle)
 
+    // ★★★ findanglesSub3
+    LibReduceAngle.FindanglesSub3 (MVERTS, graph, contract)
+
     (angle, diffangle, sameangle, contract) : TpAngle * TpAngle * TpAngle * int array
 
   // 3. findlive()
