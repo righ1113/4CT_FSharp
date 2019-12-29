@@ -1,4 +1,4 @@
-//using System;
+using System;
 using System.Diagnostics;
 
 namespace LibraryCS {
@@ -101,7 +101,8 @@ namespace LibraryCS {
   }
   public class LibReduceAngle {
     public static void FindanglesSub2(
-        int[][] graph, int[][] edgeno, int[] contract, int[][] angle, int[][] diffangle, int[][] sameangle) {
+      int[][] graph, int[][] edgeno, int[] contract, int[][] angle, int[][] diffangle, int[][] sameangle)
+    {
       int v, h, i, u, w, a, b, c;
       int d;
 
@@ -144,7 +145,8 @@ namespace LibraryCS {
       }
 
     }
-    public static void FindanglesSub3(int MVERTS, int[][] graph, int[] contract) {
+    public static void FindanglesSub3(int MVERTS, int[][] graph, int[] contract)
+    {
       int v, i, j, u, a;
       bool[] neighbour = new bool[MVERTS];
 
@@ -180,6 +182,101 @@ namespace LibraryCS {
 
       Debug.Assert(false,
         "         ***  ERROR: CONTRACT HAS NO TRIAD  ***\n\n");
+    }
+  }
+  public class LibReduceLive {
+    public static void Printstatus(
+      int ring, int totalcols, int extent, int extentclaim)
+    {
+      int[] simatchnumber = new int[] {0, 0, 1, 3, 10, 30, 95, 301, 980, 3228, 10797, 36487, 124542, 428506, 1485003};
+
+      Console.Write("\n\n   This has ring-size {0}, so there are {1} colourings total,\n",ring, totalcols);
+      Console.Write("   and %ld balanced signed matchings.\n",simatchnumber[ring]);
+
+      Console.Write("\n   There are {0} colourings that extend to the configuration.", extent);
+
+      Debug.Assert((extent == extentclaim),
+        "\n   *** ERROR: DISCREPANCY IN NUMBER OF EXTENDING COLOURINGS ***\n");
+
+      Console.Write("\n\n            remaining               remaining balanced\n");
+      Console.Write("           colourings               signed matchings\n");
+      Console.Write("\n              {0}", totalcols - extent);
+    }
+    public static int Record(
+      int[] col, int[] power, int ring, int[][] angle, int[] live, int extent, int bigno)
+    {
+      /* Given a colouring specified by a 1,2,4-valued function "col", it computes
+      * the corresponding number, checks if it is in live, and if so removes it. */
+
+      int[] weight = new int[5];
+      int colno, sum, i, min, max, w;
+
+      for (i = 1; i < 5; i++)
+        weight[i] = 0;
+      for (i = 1; i <= ring; i++) {
+        sum = 7 - col[angle[i][1]] - col[angle[i][2]];
+        weight[sum] += power[i];
+      }
+      min = max = weight[4];
+      for (i = 1; i <= 2; i++) {
+        w = weight[i];
+        if (w < min)
+          min = w;
+        else if (w > max)
+          max = w;
+      }
+      colno = bigno - 2 * min - max;
+      if (live[colno] != 0) {
+        extent++;
+        live[colno] = 0;
+      }
+
+      return extent;
+    }
+    public static (int, int[]) FindliveSub(
+      int bigno, int[][] angle, int[] power, int ring, int ed, int extentclaim, int ncodes, int[] live, int j, int[] c, int[] forbidden)
+    {
+      int x, extent=0, edges=0, u, i;
+
+      for (x = 0; x < 1024; x++) {
+
+        while ((forbidden[j] & c[j]) != 0) {
+          c[j] <<= 1;
+          while ((c[j] & 8) != 0) {
+            if (j >= edges - 1) {
+                Printstatus(ring, ncodes, extent, extentclaim);
+                return ((ncodes - extent), live);
+            }
+            c[++j] <<= 1;
+          }
+        }
+
+        if (j == ring + 1) {
+          extent = Record(c, power, ring, angle, live, extent, bigno);
+          c[j] <<= 1;
+          while ((c[j] & 8) != 0) {
+            if (j >= edges - 1) {
+                Printstatus(ring, ncodes, extent, extentclaim);
+                return ((ncodes - extent), live);
+            }
+            c[++j] <<= 1;
+          }
+        }
+        else {
+          --j;
+          if (j < 0) {
+              return ((ncodes - extent), live);
+          }
+          c[j] = 1;
+          for (u = 0, i = 1; i <= angle[j][0]; i++)
+            u |= c[angle[j][i]];
+          forbidden[j] = u;
+        }
+      }
+
+      Debug.Assert(false,
+        "FindliveSub : It was not good though it was repeated 1024 times!");
+      return (-1, live);
     }
   }
 }

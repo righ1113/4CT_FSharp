@@ -13,7 +13,7 @@ module Re =
   let EDGES         = 62 // max number of edges in a free completion + 1
   let MAXRING       = 14 // max ring-size
                          // 3^(i-1)
-  let POWER         = [0; 1; 3; 9; 27; 81; 243; 729; 2187; 6561; 19683; 59049; 177147; 531441; 1594323; 4782969; 14348907]
+  let POWER         = [|0; 1; 3; 9; 27; 81; 243; 729; 2187; 6561; 19683; 59049; 177147; 531441; 1594323; 4782969; 14348907|]
   let SIMATCHNUMBER = [0; 0; 1; 3; 10; 30; 95; 301; 980; 3228; 10797; 36487; 124542; 428506; 1485003]
 
   type TpAngle      = int array array
@@ -119,16 +119,31 @@ module Re =
     (angle, diffangle, sameangle, contract) : TpAngle * TpAngle * TpAngle * int array
 
   // 3. findlive()
-  let findlive live0 ncodes angle power extentclaim =
-    let nlive1 = ncodes
-    (nlive1, live0)
+  (* computes {\cal C}_0 and stores it in live. That is, computes codes of
+     colorings of the ring that are not restrictions of tri-colorings of the
+     free extension. Returns the number of such codes *)
+  let findlive live0 ncodes (angle : int array array) extentclaim =
+    let ring      = angle.[0].[1] // ring-size
+    let ed        = angle.[0].[2]
+    let bigno     = (POWER.[ring + 1] - 1) / 2 // number of codes of colorings of R
+    let c         = Array.replicate EDGES 0
+    let j         = ed - 1
+    c.[ed]        <- 1
+    c.[j]         <- 2
+    let forbidden = Array.replicate EDGES 0
+    forbidden.[j] <- 5
+
+    let structureTuple = LibReduceLive.FindliveSub (bigno, angle, POWER, ring, ed, extentclaim, ncodes, live0, j, c, forbidden)
+    // 構造体タプルのパターンマッチ
+    match structureTuple with
+      | struct (ncodes1, live1) -> (ncodes1, live1)
 
   // 4. updatelive()
-  let updatelive ring real0 power live1 nchar ncodes nlive1 =
+  let updatelive ring real0 live1 nchar ncodes nlive1 =
     (nlive1, live1)
 
   // 5. checkContract()
-  let checkContract live2 nlive2 diffangle sameangle contract power =
+  let checkContract live2 nlive2 diffangle sameangle contract =
     ()
 
   let reduce =
@@ -157,20 +172,20 @@ module Re =
       // 3. findlive()
       let ring   = graph.[0+1].[1] // ring-size
       let ncodes = POWER.[ring + 1] / 2 // number of codes of colorings of R
-      let live0  = List.replicate ncodes 1
-      let real0  = List.replicate (SIMATCHNUMBER.[MAXRING] / 8 + 2) 255
+      let live0  = Array.replicate ncodes 1
+      let real0  = Array.replicate (SIMATCHNUMBER.[MAXRING] / 8 + 2) 255
       let nchar  = SIMATCHNUMBER.[ring] / 8 + 1
-      let (nlive1, live1) = findlive live0 ncodes angle POWER graph.[0+1].[2]
+      let (nlive1, live1) = findlive live0 ncodes angle graph.[0+1].[2]
 
       // 4. updatelive()
       // computes {\cal M}_{i+1} from {\cal M}_i, updates the bits of "real"
-      let (nlive2, live2) = updatelive ring real0 POWER live1 nchar ncodes nlive1
+      let (nlive2, live2) = updatelive ring real0 live1 nchar ncodes nlive1
       // computes {\cal C}_{i+1} from {\cal C}_i, updates "live"
 
       // 5. checkContract()
       (* This verifies that the set claimed to be a contract for the
          configuration really is. *)
-      checkContract live2 nlive2 diffangle sameangle contract POWER
+      checkContract live2 nlive2 diffangle sameangle contract
 
     true
 
