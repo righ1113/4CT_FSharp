@@ -185,22 +185,21 @@ namespace LibraryCS {
     }
   }
   public class LibReduceLive {
+    public static int[] simatchnumber = new int[] {0, 0, 1, 3, 10, 30, 95, 301, 980, 3228, 10797, 36487, 124542, 428506, 1485003};
     public static void Printstatus(
       int ring, int totalcols, int extent, int extentclaim)
     {
-      int[] simatchnumber = new int[] {0, 0, 1, 3, 10, 30, 95, 301, 980, 3228, 10797, 36487, 124542, 428506, 1485003};
-
-      Console.Write("\n\n   This has ring-size {0}, so there are {1} colourings total,\n",ring, totalcols);
-      Console.Write("   and %ld balanced signed matchings.\n",simatchnumber[ring]);
+      Console.Write("\n\n   This has ring-size {0}, so there are {1} colourings total,\n", ring, totalcols);
+      Console.Write("   and {0} balanced signed matchings.\n", simatchnumber[ring]);
 
       Console.Write("\n   There are {0} colourings that extend to the configuration.", extent);
 
-      Debug.Assert((extent == extentclaim),
-        "\n   *** ERROR: DISCREPANCY IN NUMBER OF EXTENDING COLOURINGS ***\n");
+      //Debug.Assert((extent == extentclaim),
+      //  "\n   *** ERROR: DISCREPANCY IN NUMBER OF EXTENDING COLOURINGS ***\n");
 
       Console.Write("\n\n            remaining               remaining balanced\n");
       Console.Write("           colourings               signed matchings\n");
-      Console.Write("\n              {0}", totalcols - extent);
+      Console.Write("\n              {0}\n", totalcols - extent);
     }
     public static int Record(
       int[] col, int[] power, int ring, int[][] angle, int[] live, int extent, int bigno)
@@ -215,6 +214,7 @@ namespace LibraryCS {
         weight[i] = 0;
       for (i = 1; i <= ring; i++) {
         sum = 7 - col[angle[i][1]] - col[angle[i][2]];
+        sum = (sum >= 5) ? 4 : sum;
         weight[sum] += power[i];
       }
       min = max = weight[4];
@@ -236,14 +236,14 @@ namespace LibraryCS {
     public static (int, int[]) FindliveSub(
       int bigno, int[][] angle, int[] power, int ring, int ed, int extentclaim, int ncodes, int[] live, int j, int[] c, int[] forbidden)
     {
-      int x, extent=0, edges=0, u, i;
+      int x, extent=0, u, i;
 
       for (x = 0; x < 1024; x++) {
 
         while ((forbidden[j] & c[j]) != 0) {
           c[j] <<= 1;
           while ((c[j] & 8) != 0) {
-            if (j >= edges - 1) {
+            if (j >= ed - 1) {
                 Printstatus(ring, ncodes, extent, extentclaim);
                 return ((ncodes - extent), live);
             }
@@ -255,7 +255,7 @@ namespace LibraryCS {
           extent = Record(c, power, ring, angle, live, extent, bigno);
           c[j] <<= 1;
           while ((c[j] & 8) != 0) {
-            if (j >= edges - 1) {
+            if (j >= ed - 1) {
                 Printstatus(ring, ncodes, extent, extentclaim);
                 return ((ncodes - extent), live);
             }

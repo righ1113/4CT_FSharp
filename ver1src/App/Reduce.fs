@@ -104,7 +104,7 @@ module Re =
     let sameangle = Array.replicate EDGES (Array.replicate 5 0)
     diffangle.[0].[0] <- 0 //graph.[0+1].[0]
     diffangle.[0].[1] <- graph.[0+1].[1]
-    diffangle.[0].[2] <- EDGES
+    diffangle.[0].[2] <- edge
     angle.[0].[0]     <- diffangle.[0].[0]
     angle.[0].[1]     <- diffangle.[0].[1]
     angle.[0].[2]     <- diffangle.[0].[2]
@@ -122,8 +122,8 @@ module Re =
   (* computes {\cal C}_0 and stores it in live. That is, computes codes of
      colorings of the ring that are not restrictions of tri-colorings of the
      free extension. Returns the number of such codes *)
-  let findlive live0 ncodes (angle : int array array) extentclaim =
-    let ring      = angle.[0].[1] // ring-size
+  let findlive ring live0 ncodes (angle : int array array) extentclaim =
+    //let ring      = angle.[0].[1] // ring-size
     let ed        = angle.[0].[2]
     let bigno     = (POWER.[ring + 1] - 1) / 2 // number of codes of colorings of R
     let c         = Array.replicate EDGES 0
@@ -175,7 +175,7 @@ module Re =
       let live0  = Array.replicate ncodes 1
       let real0  = Array.replicate (SIMATCHNUMBER.[MAXRING] / 8 + 2) 255
       let nchar  = SIMATCHNUMBER.[ring] / 8 + 1
-      let (nlive1, live1) = findlive live0 ncodes angle graph.[0+1].[2]
+      let (nlive1, live1) = findlive ring live0 ncodes angle graph.[0+1].[2]
 
       // 4. updatelive()
       // computes {\cal M}_{i+1} from {\cal M}_i, updates the bits of "real"
