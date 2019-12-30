@@ -139,15 +139,84 @@ module Re =
       | struct (ncodes1, live1) -> (ncodes1, live1)
 
   // 4. updatelive()
-  let updatelive ring real0 live1 nchar ncodes nlive1 =
-    (nlive1, live1)
+  let augment n interval depth weight matchweight live real (pnreal : byref<int>) ring basecol on (pbit : byref<int>) (prealterm : byref<int>) nchar =
+    ()
+  let testmatch ring real live nchar =
+    (* This generates all balanced signed matchings, and for each one, tests
+     * whether all associated colourings belong to "live". It writes the answers
+     * in the bits of the characters of "real". *)
+
+    let mutable nreal = 0
+    (* "nreal" will be the number of balanced signed matchings such that all
+    * associated colourings belong to "live"; ie the total number of nonzero
+    * bits in the entries of "real" *)
+    let mutable bit = 1
+    let mutable realterm = 0
+    // First, it generates the matchings not incident with the last ring edge
+
+    let matchweight = (Array.replicate 16 (Array.replicate 16 (Array.replicate 4 0)))
+    let interval    = Array.replicate 10 0
+    let weight      = Array.replicate 16 (Array.replicate 4 0)
+    for a in 2..ring do
+      for b in 1..(a-1) do
+        matchweight.[a].[b].[0] <- 2 * (POWER.[a] + POWER.[b])
+        matchweight.[a].[b].[1] <- 2 * (POWER.[a] - POWER.[b])
+        matchweight.[a].[b].[2] <- POWER.[a] + POWER.[b]
+        matchweight.[a].[b].[3] <- POWER.[a] - POWER.[b]
+    for a in 2..(ring-1) do
+      for b in 1..(a-1) do
+        let mutable n = 0
+        weight.[1] <- matchweight.[a].[b]
+        if b >= 3 then
+          n <- 1
+          interval.[1] <- 1
+          interval.[2] <- b - 1
+        if a >= b + 3 then
+          n <- n + 1
+          interval.[2 * n - 1] <- b + 1
+          interval.[2 * n]     <- a - 1
+        augment n interval 1 weight matchweight live real &nreal ring 0 0 &bit &realterm nchar
+
+    // now, the matchings using an edge incident with "ring"
+    for a in 2..ring do
+      for b in 1..(a-1) do
+        matchweight.[a].[b].[0] <-  POWER.[a] + POWER.[b]
+        matchweight.[a].[b].[1] <-  POWER.[a] - POWER.[b]
+        matchweight.[a].[b].[2] <- -POWER.[a] - POWER.[b]
+        matchweight.[a].[b].[3] <- -POWER.[a] - 2 * POWER.[b]
+    for b in 1..(ring-1) do
+      let mutable n = 0
+      weight.[1] <- matchweight.[ring].[b]
+      if b >= 3 then
+        n <- 1
+        interval.[1] <- 1
+        interval.[2] <- b - 1
+      if ring >= b + 3 then
+        n <- n + 1
+        interval.[2 * n - 1] <- b + 1
+        interval.[2 * n]     <- ring - 1
+      augment n interval 1 weight matchweight live real &nreal ring ((POWER.[ring + 1] - 1) / 2) 1 &bit &realterm nchar
+    printfn "               %d" nreal
+
+    ()
+
+  let updateliveSub live ncodes (nlive1 : byref<int>) =
+    false
+  let updatelive ring real live nchar ncodes (nlive : int) =
+    let mutable nlive1 = nlive
+    testmatch ring real live nchar
+    while (updateliveSub live ncodes &nlive1) do
+      testmatch ring real live nchar
+      // computes {\cal M}_{i+1} from {\cal M}_i, updates the bits of "real" */
+    (nlive1, live)
 
   // 5. checkContract()
   let checkContract live2 nlive2 diffangle sameangle contract =
     ()
 
+
   let reduce =
-    printfn "Reduce.fs"
+    printfn "start Reduce.fs"
 
     let graphs = LibFS.readFileGoodConfsR
     printfn "%d" graphs.[1].[1].[0]
