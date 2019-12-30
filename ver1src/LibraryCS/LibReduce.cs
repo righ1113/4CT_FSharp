@@ -279,6 +279,70 @@ namespace LibraryCS {
       return (-1, live);
     }
   }
+  public class LibReduceUpdate {
+    public static bool Stillreal(
+      int col, int[] choice, int depth, int[] live, int on)
+    {
+      /* Given a signed matching, this checks if all associated colourings are in
+      * "live", and, if so, records that fact on the bits of the corresponding
+      * entries of "live". */
+
+      return true;
+    }
+    public static void Checkreality(
+      int depth, int[][] weight, int[] live, int[] real, ref int pnreal, int ring, int basecol, int on, ref int pbit, ref int prealterm, int nchar)
+    {
+      /* For a given matching M, it runs through all signings, and checks which of
+      * them have the property that all associated colourings belong to "live". It
+      * writes the answers into bits of "real", starting at the point specified by
+      * "bit" and "realterm". "basecol" is for convenience in computing the
+      * associated colourings; it is zero for matchings not incident with "ring".
+      * "on" is nonzero iff the matching is incident with "ring". */
+
+      int i, k, nbits, col, parity;
+      int[] choice = new int[8];
+      int left;
+
+      nbits = 1 << (depth - 1);
+      /* k will run through all subsets of M minus the first match */
+      for (k = 0; k < nbits; k++, pbit <<= 1) {
+        if (pbit == 0) {
+          pbit = 1;
+          ++prealterm;
+
+          Debug.Assert((prealterm <= nchar),
+            "More than %ld entries in real are needed\n");
+
+        }
+        if ((pbit & real[prealterm]) == 0)
+          continue;
+        col = basecol;
+        parity = ring & 1;
+        for (i = 1, left = k; i < depth; i++, left >>= 1) {
+          if ((left & 1) != 0) {	/* i.e. if a_i=1, where k=a_1+2a_2+4a_3+... */
+            parity ^= 1;
+            choice[i] = weight[i][1];
+            col += weight[i][3];
+          } else {
+            choice[i] = weight[i][0];
+            col += weight[i][2];
+          }
+        }
+        if (parity != 0) {
+          choice[depth] = weight[depth][1];
+          col += weight[depth][3];
+        } else {
+          choice[depth] = weight[depth][0];
+          col += weight[depth][2];
+        }
+        if (!Stillreal(col, choice, depth, live, on)) {
+          real[prealterm] ^= pbit;
+        } else
+          pnreal++;
+      }
+    }
+
+  }
 }
 
 

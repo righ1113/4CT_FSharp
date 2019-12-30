@@ -3,8 +3,8 @@ namespace Reduce
 //open System
 open System.Diagnostics
 open LibraryFS
-//open FSharpPlus.Lens
 open LibraryCS
+//open FSharpPlus.Lens
 
 module Re =
   let MVERTS        = 27 // max number of vertices in a free completion + 1
@@ -139,7 +139,41 @@ module Re =
       | struct (ncodes1, live1) -> (ncodes1, live1)
 
   // 4. updatelive()
-  let augment n interval depth weight matchweight live real (pnreal : byref<int>) ring basecol on (pbit : byref<int>) (prealterm : byref<int>) nchar =
+  //let checkreality depth weight live real (pnreal : byref<int>) ring basecol on (pbit : byref<int>) (prealterm : byref<int>) nchar =
+  //  ()
+  let rec augment n (interval : int array) depth (weight : int array array) (matchweight : int array array array) live real (pnreal : byref<int>) ring basecol on (pbit : byref<int>) (prealterm : byref<int>) nchar =
+    (* Finds all matchings such that every match is from one of the given
+     * intervals. (The intervals should be disjoint, and ordered with smallest
+     * first, and lower end given first.) For each such matching it examines all
+     * signings of it, and adjusts the corresponding entries in "real" and
+     * "live". *)
+    let newinterval = Array.replicate 10 0
+
+    LibReduceUpdate.Checkreality (depth, weight, live, real, &pnreal, ring, basecol, on, &pbit, &prealterm, nchar)
+    let depth1 = depth + 1
+    for r in 1..n do
+      let lower = interval.[2 * r - 1]
+      let upper = interval.[2 * r]
+      for i in (lower + 1)..upper do
+        for j in lower..(i-1) do
+          weight.[depth1] <- matchweight.[i].[j]
+          for h in 1..(2 * r - 2) do
+            newinterval.[h] <- interval.[h]
+          let mutable newn = r - 1
+          let mutable h2   = 2 * r - 1
+          if j > lower + 1 then
+            newn <- newn + 1
+            newinterval.[h2] <- lower
+            h2 <- h2 + 1
+            newinterval.[h2] <- j - 1
+            h2 <- h2 + 1
+          if i > j + 1 then
+            newn <- newn + 1
+            newinterval.[h2] <- j + 1
+            h2 <- h2 + 1
+            newinterval.[h2] <- i - 1
+            h2 <- h2 + 1
+          augment newn newinterval depth weight matchweight live real &pnreal ring basecol on &pbit &prealterm nchar
     ()
   let testmatch ring real live nchar =
     (* This generates all balanced signed matchings, and for each one, tests
@@ -204,8 +238,11 @@ module Re =
     false
   let updatelive ring real live nchar ncodes (nlive : int) =
     let mutable nlive1 = nlive
+    // stillreal()でliveに破壊的代入をおこなう
     testmatch ring real live nchar
+    // nlive1、liveに破壊的代入をおこなう
     while (updateliveSub live ncodes &nlive1) do
+      // stillreal()でliveに破壊的代入をおこなう
       testmatch ring real live nchar
       // computes {\cal M}_{i+1} from {\cal M}_i, updates the bits of "real" */
     (nlive1, live)
@@ -219,7 +256,7 @@ module Re =
     printfn "start Reduce.fs"
 
     let graphs = LibFS.readFileGoodConfsR
-    printfn "%d" graphs.[1].[1].[0]
+    //printfn "%d" graphs.[1].[1].[0]
 
     let mutable i = 0
     for graph in Array.take 3 graphs do
