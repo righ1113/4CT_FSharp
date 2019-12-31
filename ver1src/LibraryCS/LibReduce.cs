@@ -286,6 +286,51 @@ namespace LibraryCS {
       /* Given a signed matching, this checks if all associated colourings are in
       * "live", and, if so, records that fact on the bits of the corresponding
       * entries of "live". */
+      /*long sum[64], mark, i, j, twopower, b, c;
+      long twisted[64], ntwisted, untwisted[64], nuntwisted;
+
+      ntwisted = nuntwisted = 0;
+      if (col < 0) {
+        if (!live[-col])
+          return false;
+        twisted[ntwisted++] = -col;
+        sum[0] = col;
+      } else {
+        if (!live[col])
+          return false;
+        untwisted[nuntwisted++] = sum[0] = col;
+      }
+      for (i = 2, twopower = 1, mark = 1; i <= depth; i++, twopower <<= 1) {
+        c = choice[i];
+        for (j = 0; j < twopower; j++, mark++) {
+          b = sum[j] - c;
+          if (b < 0) {
+            if (!live[-b])
+                return false;
+            twisted[ntwisted++] = -b;
+            sum[mark] = b;
+          } else {
+            if (!live[b])
+                return false;
+            untwisted[nuntwisted++] = sum[mark] = b;
+          }
+        }
+      }*/
+
+      /* Now we know that every coloring that theta-fits M has its code in
+      * "live". We mark the corresponding entry of "live" by theta, that is,
+      * set its second, third or fourth bit to 1 */
+      /*if (on != 0) {
+        for (i = 0; i < ntwisted; i++)
+          live[twisted[i]]   |= 8;
+        for (i = 0; i < nuntwisted; i++)
+          live[untwisted[i]] |= 4;
+      } else {
+        for (i = 0; i < ntwisted; i++)
+          live[twisted[i]]   |= 2;
+        for (i = 0; i < nuntwisted; i++)
+          live[untwisted[i]] |= 2;
+      }*/
 
       return true;
     }
