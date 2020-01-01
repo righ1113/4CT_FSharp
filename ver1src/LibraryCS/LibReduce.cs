@@ -286,17 +286,20 @@ namespace LibraryCS {
       /* Given a signed matching, this checks if all associated colourings are in
       * "live", and, if so, records that fact on the bits of the corresponding
       * entries of "live". */
-      /*long sum[64], mark, i, j, twopower, b, c;
-      long twisted[64], ntwisted, untwisted[64], nuntwisted;
+      int mark, i, j, twopower, b, c;
+      int ntwisted, nuntwisted;
+      int[] sum       = new int[64];
+      int[] twisted   = new int[64];
+      int[] untwisted = new int[8];
 
       ntwisted = nuntwisted = 0;
       if (col < 0) {
-        if (!live[-col])
+        if (live[-col] == 0)
           return false;
         twisted[ntwisted++] = -col;
         sum[0] = col;
       } else {
-        if (!live[col])
+        if (live[col] == 0)
           return false;
         untwisted[nuntwisted++] = sum[0] = col;
       }
@@ -305,22 +308,22 @@ namespace LibraryCS {
         for (j = 0; j < twopower; j++, mark++) {
           b = sum[j] - c;
           if (b < 0) {
-            if (!live[-b])
+            if (live[-b] == 0)
                 return false;
             twisted[ntwisted++] = -b;
             sum[mark] = b;
           } else {
-            if (!live[b])
+            if (live[b] == 0)
                 return false;
             untwisted[nuntwisted++] = sum[mark] = b;
           }
         }
-      }*/
+      }
 
       /* Now we know that every coloring that theta-fits M has its code in
       * "live". We mark the corresponding entry of "live" by theta, that is,
       * set its second, third or fourth bit to 1 */
-      /*if (on != 0) {
+      if (on != 0) {
         for (i = 0; i < ntwisted; i++)
           live[twisted[i]]   |= 8;
         for (i = 0; i < nuntwisted; i++)
@@ -330,7 +333,7 @@ namespace LibraryCS {
           live[twisted[i]]   |= 2;
         for (i = 0; i < nuntwisted; i++)
           live[untwisted[i]] |= 2;
-      }*/
+      }
 
       return true;
     }
@@ -387,6 +390,81 @@ namespace LibraryCS {
       }
     }
 
+  }
+  public class LibReduceContract {
+    public static bool Inlive(
+      int[] col, int ring, int[] live, int bigno, int[] power)
+    {
+      /* Same as "record" above, except now it returns whether the colouring is in
+      * live, and does not change live. */
+      int colno, i, min, max, w;
+      int[] weight = new int[5];
+
+      for (i = 1; i < 5; i++)
+          weight[i] = 0;
+      for (i = 1; i <= ring; i++)
+          weight[col[i]] += power[i];
+      min = max = weight[4];
+      for (i = 1; i <= 2; i++) {
+          w = weight[i];
+          if (w < min)
+      min = w;
+          else if (w > max)
+      max = w;
+      }
+      colno = bigno - 2 * min - max;
+      if (live[colno] == 0){
+        return true;
+      } else {
+        return false;
+      }
+    }
+    public static void CheckContractSub(
+      int[] forbidden, int[] c, int[] contract, int j, int start, int[][] diffangle, int[][] sameangle, int bigno, int ring, int[] live, int[] power)
+    {
+      int x, u, i;
+      int[] dm = new int[5];
+      int[] sm = new int[5];
+
+      for (x = 0; x < 1024; x++) {
+        while ((forbidden[j] & c[j]) != 0) {
+          c[j] <<= 1;
+          while ((c[j] & 8) != 0) {
+            while (contract[++j] != 0);
+            if (j >= start) {
+              Console.Write("               ***  Contract confirmed  ***\n\n");
+              return;
+            }
+            c[j] <<= 1;
+          }
+        }
+        if (j == 1) {
+          Debug.Assert(Inlive(c, ring, live, bigno, power),
+            "       ***  ERROR: INPUT CONTRACT IS INCORRECT  ***\n\n");
+          c[j] <<= 1;
+          while ((c[j] & 8) != 0) {
+            while (contract[++j] != 0);
+            if (j >= start) {
+              Console.Write("               ***  Contract confirmed  ***\n\n");
+              return;
+            }
+            c[j] <<= 1;
+          }
+          continue;
+        }
+        while (contract[--j] != 0);
+        dm = diffangle[j];
+        sm = sameangle[j];
+        c[j] = 1;
+        for (u = 0, i = 1; i <= dm[0]; i++)
+          u |= c[dm[i]];
+        for (i = 1; i <= sm[0]; i++)
+          u |= ~c[sm[i]];
+        forbidden[j] = u;
+      }
+      //Debug.Assert(false,
+      //  "checkContractSub : It was not good though it was repeated 1024 times!");
+    }
   }
 }
 

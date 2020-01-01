@@ -234,8 +234,36 @@ module Re =
 
     ()
 
-  let updateliveSub live ncodes (nlive1 : byref<int>) =
-    false
+  let updateliveSub (live : int array) ncols (p : byref<int>) =
+    (* runs through "live" to see which colourings still have `real' signed
+     * matchings sitting on all three pairs of colour classes, and updates "live"
+     * accordingly; returns 1 if nlive got smaller and stayed >0, and 0 otherwise *)
+
+    let nlive = p
+    let mutable newnlive = 0
+
+    if live.[0] > 1 then
+      live.[0] <- 15
+
+    for i in 0..(ncols-1) do
+      if live.[i] <> 15 then
+        live.[i] <- 0
+      else
+        newnlive <- newnlive + 1
+        live.[i] <- 1
+
+    p <- newnlive
+    printfn "            %d" newnlive
+
+    if (newnlive < nlive) && (newnlive > 0) then
+      true
+    else
+      if newnlive = 0 then
+        printfn "\n\n\n                  ***  D-reducible  ***\n"
+      else
+        printfn "\n\n\n                ***  Not D-reducible  ***"
+      false
+
   let updatelive ring real live nchar ncodes (nlive : int) =
     let mutable nlive1 = nlive
     // stillreal()でliveに破壊的代入をおこなう
@@ -248,10 +276,40 @@ module Re =
     (nlive1, live)
 
   // 5. checkContract()
-  let checkContract live2 nlive2 diffangle sameangle contract =
-    ()
+  // checks that no colouring in live is the restriction to E(R) of a
+  // tri-coloring of the free extension modulo the specified contract
+  let checkContract ring live2 nlive2 (diffangle : int array array) (sameangle : int array array) (contract : int array) =
+    //Debug.Assert(((nlive2 <> 0) || (contract.[0] <> 0)),
+    //  "         ***  ERROR: CONTRACT PROPOSED  ***\n\n")
+    //Debug.Assert((contract.[0] <> 0),
+    //  "       ***  ERROR: NO CONTRACT PROPOSED  ***\n\n")
+    Debug.Assert((nlive2 = contract.[EDGES]),
+      "       ***  ERROR: DISCREPANCY IN EXTERIOR SIZE  ***\n\n")
+
+    let bigno = (POWER.[ring + 1] - 1) / 2 // needed in "inlive"
+    let mutable start = diffangle.[0].[2]
+    let c = Array.replicate EDGES 0
+    let forbidden = Array.replicate EDGES 0 // called F in the notes
+    while contract.[start] <> 0 do
+      start <- start - 1
+    c.[start] <- 1
+    let mutable j = start
+    while contract.[j] <> 0 do
+      j <- j - 1
+    let dm = diffangle.[j]
+    let sm = sameangle.[j]
+    c.[j] <- 1
+    let mutable u = 4
+    for i in 1..dm.[0] do
+      u <- u ||| c.[dm.[i]]
+    for i in 1..sm.[0] do
+      u <- u ||| ~~~c.[sm.[i]]
+    forbidden.[j] <- u
+
+    LibReduceContract.CheckContractSub (forbidden, c, contract, j, start, diffangle, sameangle, bigno, ring, live2, POWER)
 
 
+  // main routine
   let reduce =
     printfn "start Reduce.fs"
 
@@ -291,7 +349,7 @@ module Re =
       // 5. checkContract()
       (* This verifies that the set claimed to be a contract for the
          configuration really is. *)
-      checkContract live2 nlive2 diffangle sameangle contract
+      checkContract ring live2 nlive2 diffangle sameangle contract
 
     true
 
