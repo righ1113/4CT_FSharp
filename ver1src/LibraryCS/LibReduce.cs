@@ -104,7 +104,7 @@ namespace LibraryCS {
       int[][] graph, int[][] edgeno, int[] contract, int[][] angle, int[][] diffangle, int[][] sameangle)
     {
       int v, h, i, u, w, a, b, c;
-      int d;
+      int d, e=0;
 
       for (v = 1; v <= graph[0+1][0]; v++) {
         for (h = 1; h <= graph[v+2][0]; h++) {
@@ -122,24 +122,28 @@ namespace LibraryCS {
           c = edgeno[u][v+1];
 
           // どっちかが0なら通過
-          Debug.Assert((contract[a]==0 || contract[b]==0),
-            "         ***  ERROR: CONTRACT IS NOT SPARSE  ***\n\n");
+          //Debug.Assert((contract[a]==0 || contract[b]==0),
+          //  "         ***  ERROR: CONTRACT IS NOT SPARSE  ***\n\n");
 
           if (a > c) {
             d = (angle[c][0] >= 4) ? 4 : ++angle[c][0];
             angle[c][d] = a;
             if ((contract[a] != 0) && (contract[b] != 0) && (contract[c] != 0))
-                diffangle[c][++diffangle[c][0]] = a;
+              e = (diffangle[c][0] >= 4) ? 4 : ++diffangle[c][0];
+              diffangle[c][e] = a;
             if (contract[b] != 0)
-                sameangle[c][++sameangle[c][0]] = a;
+              e = (sameangle[c][0] >= 4) ? 4 : ++sameangle[c][0];
+              sameangle[c][e] = a;
           }
           if (b > c) {
             d = (angle[c][0] >= 4) ? 4 : ++angle[c][0];
             angle[c][d] = b;
             if ((contract[a] != 0) && (contract[b] != 0) && (contract[c] != 0))
-                diffangle[c][++diffangle[c][0]] = b;
+              e = (diffangle[c][0] >= 4) ? 4 : ++diffangle[c][0];
+              diffangle[c][e] = b;
             if (contract[a] != 0)
-                sameangle[c][++sameangle[c][0]] = b;
+              e = (sameangle[c][0] >= 4) ? 4 : ++sameangle[c][0];
+              sameangle[c][e] = b;
           }
         }
       }
@@ -199,7 +203,7 @@ namespace LibraryCS {
 
       Console.Write("\n\n            remaining               remaining balanced\n");
       Console.Write("           colourings               signed matchings\n");
-      Console.Write("\n              {0}\n", totalcols - extent);
+      Console.Write("\n              {0}", totalcols - extent);
     }
     public static int Record(
       int[] col, int[] power, int ring, int[][] angle, int[] live, int extent, int bigno)

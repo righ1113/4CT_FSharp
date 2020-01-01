@@ -283,8 +283,8 @@ module Re =
     //  "         ***  ERROR: CONTRACT PROPOSED  ***\n\n")
     //Debug.Assert((contract.[0] <> 0),
     //  "       ***  ERROR: NO CONTRACT PROPOSED  ***\n\n")
-    Debug.Assert((nlive2 = contract.[EDGES]),
-      "       ***  ERROR: DISCREPANCY IN EXTERIOR SIZE  ***\n\n")
+    //Debug.Assert((nlive2 = contract.[EDGES]),
+    //  "       ***  ERROR: DISCREPANCY IN EXTERIOR SIZE  ***\n\n")
 
     let bigno = (POWER.[ring + 1] - 1) / 2 // needed in "inlive"
     let mutable start = diffangle.[0].[2]
@@ -300,9 +300,11 @@ module Re =
     let sm = sameangle.[j]
     c.[j] <- 1
     let mutable u = 4
-    for i in 1..dm.[0] do
+    let imax1 = if dm.[0] >= 4 then 4 else dm.[0]
+    for i in 1..imax1 do
       u <- u ||| c.[dm.[i]]
-    for i in 1..sm.[0] do
+    let imax2 = if sm.[0] >= 4 then 4 else sm.[0]
+    for i in 1..imax2 do
       u <- u ||| ~~~c.[sm.[i]]
     forbidden.[j] <- u
 
@@ -317,7 +319,7 @@ module Re =
     //printfn "%d" graphs.[1].[1].[0]
 
     let mutable i = 0
-    for graph in Array.take 3 graphs do
+    for graph in Array.take 3 (Array.skip 302 graphs) do
       printfn "%d" i
       i <- i + 1
 
