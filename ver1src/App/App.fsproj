@@ -9,6 +9,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Reduce.fs" />
+    <Compile Include="Discharge.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 </Project>
+
+
+

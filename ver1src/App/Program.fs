@@ -7,16 +7,18 @@
 
 open System
 open Reduce
+open Discharge
 
 [<EntryPoint>]
 let main argv =
   printfn "これは四色定理を解くプログラムです。"
 
   printfn "1: reduce. 2: dischrge.  please select."
-  "1" //Console.ReadLine()
+  Console.ReadLine()
   |> fun str ->
     match str with
       | "1" -> Re.reduce
+      | "2" -> Di.discharge
       | _   -> true
   |> fun retB ->
     if retB then

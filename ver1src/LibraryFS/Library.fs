@@ -7,8 +7,8 @@ module LibFS =
   type TpConfmat = JsonProvider<"[[[1]]]">
 
   let readFileGoodConfsR =
-    //File.ReadAllText "4ctdata/goodConfs.txt" // VSCode
-    File.ReadAllText "../../../../4ctdata/goodConfs.txt" // Visual Studio
+    File.ReadAllText "4ctdata/goodConfs.txt" // VSCode
+    //File.ReadAllText "../../../../4ctdata/goodConfs.txt" // Visual Studio
     |> TpConfmat.Parse
 
     //printfn "%d" hoge2.[0].[0].[1]
