@@ -5,6 +5,7 @@ open FSharp.Data
 
 module LibFS =
   type TpConfmat = JsonProvider<"[[[1]]]">
+  type TpDiConfs = JsonProvider<"""[{"a":[0], "b":[0], "c":[8], "d":[6]}]""">
 
   let readFileGoodConfsR =
     File.ReadAllText "4ctdata/goodConfs.txt" // VSCode
@@ -19,6 +20,11 @@ module LibFS =
 //    |> String.
 //    |> TpConfmat.Parse
 //    |> List.map Tail
+
+  let readFileGoodConfsD =
+    File.ReadAllText "4ctdata/DiGoodConfs.txt" // VSCode
+    //File.ReadAllText "../../../../4ctdata/DiGoodConfs.txt" // Visual Studio
+    |> TpDiConfs.Parse
 
 
 
