@@ -36,7 +36,8 @@ module LibFS =
   let readFileTacticsD =
     File.ReadAllLines "4ctdata/DiTactics07.txt" // VSCode
     //File.ReadAllText "../../../../4ctdata/DiTactics07.txt" // Visual Studio
-    |> Array.map (fun str -> str.Split " ")
+    |> Array.map ((fun str -> str.Split " ")
+                  >> (Array.filter (not << String.IsNullOrEmpty)))
 
 
 
