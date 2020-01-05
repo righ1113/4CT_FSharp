@@ -1,5 +1,7 @@
 namespace Discharge
 
+open System.Diagnostics
+open FSharpPlus.Lens
 open LibraryFS
 open LibraryCS2
 
@@ -16,21 +18,85 @@ module Di =
   let MAXLEV     = 12             // max level of an input line + 1
   let DIFNOUTS   = [0; 0; 0; 0; 0; 0; 0; 103; 103; 103; 103; 103]
 
-  type TpAxle       = int array array * int array array * int
-  type TpAxleI      = int array * int array
-  type TpCond       = int array * int array
-  type TpAdjmat     = int array array
-  type TpVertices   = int array
-  type TpQuestion   = int array * int array * int array * int array
-  type TpEdgelist   = int array array array
-  type TpPosout     = int array * int array * int array * int array array * int array array * int array array * int array
-  type TpPosoutI    = int * int * int * int array * int array * int array * int
-  type TpReducePack = TpAxle * int array * int array * TpAdjmat * TpEdgelist * bool array * TpVertices * TpQuestion array
-  type TpConfPack   = bool * int * bool array * TpVertices * int
+  type TpAxle        = int array array * int array array * int
+  type TpAxleI       = int array * int array
+  type TpCond        = int array * int array
+  type TpAdjmat      = int array array
+  type TpVertices    = int array
+  type TpQuestion    = int array * int array * int array * int array
+  type TpEdgelist    = int array array array
+  type TpPosout      = int array * int array * int array * int array array * int array array * int array array * int array
+  type TpPosoutI     = int * int * int * int array * int array * int array * int
+  type TpReducePack1 = TpAxle * int array * int array * TpAdjmat
+  type TpReducePack2 = TpEdgelist * bool array * TpVertices * TpQuestion array
+  type TpConfPack    = bool * int * bool array * TpVertices * int
+
+  // 1.Symmetry
+  let checkSymmetry tactic axles posout nosym =
+    ()
+
+  // 2.Reduce
+  let reduce (aStack, bLow, bUpp, adjmat) (edgelist, used, image, redquestions) axles =
+    (true, aStack, used, image)
 
   // main routine
-  let mainLoop rP posout (nn, mm) deg nosym (low, upp, lev) tactics =
-    "Q.E.D."
+  let rec mainLoop (rP1 : TpReducePack1) rP2 posout (nn, mm) deg nosym (low, upp, lev) tactics =
+    match lev with
+      | lev when lev >= MAXLEV ->
+          Debug.Assert(false, "More than %d levels")
+          "error1"
+      | lev when lev < 0       ->
+          // 終了時
+          Array.head (Array.head tactics)
+      | _                      ->
+          match (Array.head tactics).[1] with
+            | "S" ->
+                printfn "Symmetry"
+                checkSymmetry (Array.tail (Array.tail (Array.head tactics))) (low, upp, lev) posout nosym
+                mainLoop rP1 rP2 posout (nn, mm) deg nosym (low, upp, lev - 1) (Array.tail tactics)
+            | "R" ->
+                printfn "Reduce"
+                let (retB, (aStack' : TpAxle), used', image') = reduce rP1 rP2 (low, upp, lev)
+                if retB then
+                  mainLoop (setl _1 aStack' rP1) (setl _3 image' (setl _2 used' rP2)) posout (nn, mm) deg nosym (low, upp, lev - 1) (Array.tail tactics)
+                else
+                  Debug.Assert(false, "Reducibility failed")
+                  "error3"
+            | "H" ->
+                printfn "Hubcap"
+                "Q.E.D."
+            | "C" ->
+                printfn "Condition"
+                "Q.E.D."
+            | _   ->
+                Debug.Assert(false, "Invalid instruction")
+                "error2"
+(*
+        case head tactics !! 1 of
+          "S" -> do
+                  putStrLn "Symmetry"
+                  checkSymmetry (tail (tail (head tactics))) axles posout nosym
+                  mainLoop rP posout (nn, mm) deg nosym (low, upp, lev-1) (tail tactics)
+          "R" -> do
+                  putStrLn "Reduce"
+                  (retB, aStack', used', image') <- reduce rP axles
+                  if retB
+                    then
+                      mainLoop (((rP & _1 .~ aStack') & _6 .~ used') & _7 .~ image') posout (nn, mm) deg nosym (low, upp, lev-1) (tail tactics)
+                    else
+                      error "Reducibility failed"
+          "H" -> do
+                  putStrLn "Hubcap"
+                  posout' <- checkHubcap posout (tail (tail (head tactics))) (low, upp, lev) deg
+                  mainLoop rP posout' (nn, mm) deg nosym (low, upp, lev-1) (tail tactics)
+          "C" -> do
+                  putStrLn "Condition"
+                  let n = read (head tactics !! 2) :: Int
+                  let m = read (head tactics !! 3) :: Int
+                  nosym2                   <- checkCondition1 (nn, mm) deg axles n m nosym
+                  (cond2, (low2, upp2, _)) <- checkCondition2 (nn, mm) axles n m
+                  mainLoop rP posout cond2 deg nosym2 (low2, upp2, lev+1) (tail tactics)
+          _   -> error "Invalid instruction"*)
   let discharge =
     printfn "start Dischage.fs"
 
@@ -75,13 +141,14 @@ module Di =
     //inStr <- readFile $ "readFile/present" ++ degStr
     let tactics = LibFS.readFileTacticsD
     printfn "%s" tactics.[13].[2]
-    let ret = mainLoop ((aSLow, aSUpp, 0), bLow, bUpp, adjmat, edgelist, used, image, graphs)
+    let ret = mainLoop ((aSLow, aSUpp, 0), bLow, bUpp, adjmat)
+                       (edgelist, used, image, [|([|0|], [|0|], [|0|], [|0|])|]) // graphs) 
                        rules
                        (nn, mm)
                        deg
                        0
                        (axlesLow, axlesUpp, 0)
-                       tactics //(tail (map words (lines inStr)))
+                       (Array.tail tactics)
 
     // final check
     //if ret == "Q.E.D." then
