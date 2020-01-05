@@ -24,9 +24,12 @@ module LibFS =
 //    |> List.map Tail
 
   let readFileGoodConfsD =
-    File.ReadAllText "4ctdata/DiGoodConfs.txt" // VSCode
-    //File.ReadAllText "../../../../4ctdata/DiGoodConfs.txt" // Visual Studio
-    |> TpDiConfs.Parse
+    let mutable out = [||] 
+    let ind = TpDiConfs.Parse <| File.ReadAllText "4ctdata/DiGoodConfs.txt" // VSCode
+    //let ind = TpDiConfs.Parse <| File.ReadAllText "../../../../4ctdata/DiGoodConfs.txt" // Visual Studio
+    for indLine in ind do
+      out <- Array.append out [|(indLine.A, indLine.B, indLine.C, indLine.D)|]
+    out
 
   let readFileRulesD =
     File.ReadAllText "4ctdata/DiRules07.txt" // VSCode

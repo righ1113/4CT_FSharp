@@ -1,5 +1,6 @@
 namespace Discharge
 
+open System
 open System.Diagnostics
 open FSharpPlus.Lens
 open LibraryFS
@@ -39,6 +40,15 @@ module Di =
   let reduce (aStack, bLow, bUpp, adjmat) (edgelist, used, image, redquestions) axles =
     (true, aStack, used, image)
 
+  // 3.Hubcap
+  let checkHubcap posout tac (low, upp, lev) deg =
+    posout
+  // 4.Condition
+  let checkCondition1 (nn, mm) deg (low, upp, lev) n m nosym =
+    nosym
+  let checkCondition2 (nn, mm) (low, upp, lev) n m =
+    ((nn, mm), (low, upp, lev))
+
   // main routine
   let rec mainLoop (rP1 : TpReducePack1) rP2 posout (nn, mm) deg nosym (low, upp, lev) tactics =
     match lev with
@@ -64,39 +74,20 @@ module Di =
                   "error3"
             | "H" ->
                 printfn "Hubcap"
-                "Q.E.D."
+                let posout' = checkHubcap posout (Array.tail (Array.tail (Array.head tactics))) (low, upp, lev) deg
+                mainLoop rP1 rP2 posout' (nn, mm) deg nosym (low, upp, lev - 1) (Array.tail tactics)
             | "C" ->
                 printfn "Condition"
+                let n = int (Int32.Parse (Array.head tactics).[2])
+                let m = int (Int32.Parse (Array.head tactics).[3])
+                let nosym2                   = checkCondition1 (nn, mm) deg (low, upp, lev) n m nosym
+                let (cond2, (low2, upp2, _)) = checkCondition2 (nn, mm) (low, upp, lev) n m
+                //止めておくmainLoop rP1 rP2 posout cond2 deg nosym2 (low2, upp2, lev + 1) (Array.tail tactics)
                 "Q.E.D."
             | _   ->
                 Debug.Assert(false, "Invalid instruction")
                 "error2"
-(*
-        case head tactics !! 1 of
-          "S" -> do
-                  putStrLn "Symmetry"
-                  checkSymmetry (tail (tail (head tactics))) axles posout nosym
-                  mainLoop rP posout (nn, mm) deg nosym (low, upp, lev-1) (tail tactics)
-          "R" -> do
-                  putStrLn "Reduce"
-                  (retB, aStack', used', image') <- reduce rP axles
-                  if retB
-                    then
-                      mainLoop (((rP & _1 .~ aStack') & _6 .~ used') & _7 .~ image') posout (nn, mm) deg nosym (low, upp, lev-1) (tail tactics)
-                    else
-                      error "Reducibility failed"
-          "H" -> do
-                  putStrLn "Hubcap"
-                  posout' <- checkHubcap posout (tail (tail (head tactics))) (low, upp, lev) deg
-                  mainLoop rP posout' (nn, mm) deg nosym (low, upp, lev-1) (tail tactics)
-          "C" -> do
-                  putStrLn "Condition"
-                  let n = read (head tactics !! 2) :: Int
-                  let m = read (head tactics !! 3) :: Int
-                  nosym2                   <- checkCondition1 (nn, mm) deg axles n m nosym
-                  (cond2, (low2, upp2, _)) <- checkCondition2 (nn, mm) axles n m
-                  mainLoop rP posout cond2 deg nosym2 (low2, upp2, lev+1) (tail tactics)
-          _   -> error "Invalid instruction"*)
+
   let discharge =
     printfn "start Dischage.fs"
 
@@ -135,14 +126,14 @@ module Di =
     //redQStr      <- readFile "readFile/unavoidableHS.txt"
     //let redQ     = read redQStr :: [TpQuestion] // (void) Reduce(NULL, 0, 0); -- read unavoidable set
     let graphs = LibFS.readFileGoodConfsD
-    printfn "%d" graphs.[5].C.[1]
+    //printfn "%d" graphs.[5].C.[1]
 
 
     //inStr <- readFile $ "readFile/present" ++ degStr
     let tactics = LibFS.readFileTacticsD
     printfn "%s" tactics.[13].[2]
     let ret = mainLoop ((aSLow, aSUpp, 0), bLow, bUpp, adjmat)
-                       (edgelist, used, image, [|([|0|], [|0|], [|0|], [|0|])|]) // graphs) 
+                       (edgelist, used, image, graphs)
                        rules
                        (nn, mm)
                        deg
