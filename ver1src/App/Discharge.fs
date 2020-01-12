@@ -26,7 +26,7 @@ module Di =
   type TpVertices    = int array
   type TpQuestion    = int array * int array * int array * int array
   type TpEdgelist    = int array array array
-  type TpPosout      = int array * int array * int array * int array array * int array array * int array array * int array
+  //type TpPosout      = int array * int array * int array * int array array * int array array * int array array * int array
   type TpPosoutI     = int * int * int * int array * int array * int array * int
   type TpReducePack1 = TpAxle * int array * int array * TpAdjmat
   type TpReducePack2 = TpEdgelist * bool array * TpVertices * TpQuestion array
@@ -36,16 +36,21 @@ module Di =
   // Assertに引っかからなければ良し
   let checkSymmetry (str : string array)
                     ((low, upp, lev) as axles : TpAxle)
-                    ((number, nolines, value, pos, plow, pupp, xx) as posout)
+                    (posout : LibFS.TpPosout)
                     nosym =
     let k       = int (Int32.Parse str.[0])
     let epsilon = int (Int32.Parse str.[1])
     let level   = int (Int32.Parse str.[2])
     let line    = int (Int32.Parse str.[3])
-    let i       = 0 //Array.find (fun x -> x = line) number
+    let i       = 0 //Array.find (fun x -> x = line) posout.number
 
     //Debug.Assert((k >= 0 && k <= Array.head low.[lev] && epsilon >= 0 && epsilon <= 1),
     //  "Illegal symmetry")
+    //Debug.Assert((i < nosym),
+    //  "No symmetry as requested")
+    //Debug.Assert((posout.nolines.[i] = level + 1),
+    //  "Level mismatch")
+
 
     ()
 
@@ -137,8 +142,8 @@ module Di =
     // TpOutlet & TpPosout
     //posoutStr    <- readFile $ "readFile/rules" ++ degStr ++ "HS.txt"
     //let posout   = read posoutStr :: TpPosout // CheckHubcap(axles, NULL, 0, print); -- read rules, compute outlets
-    let rules = ([|1|], [|1|], [|1|], [|[|1;0;0;0;0;0;0;0;0;0; 0;0;0;0;0;0;0|]|], [|[|5;0;0;0;0;0;0;0;0;0; 0;0;0;0;0;0;0|]|], [|[|5;12;0;0;0;0;0;0;0;0; 0;0;0;0;0;0;0|]|], [|0|])
-    //修正要let rules = LibFS.readFileRulesD
+    //let rules = ([|1|], [|1|], [|1|], [|[|1;0;0;0;0;0;0;0;0;0; 0;0;0;0;0;0;0|]|], [|[|5;0;0;0;0;0;0;0;0;0; 0;0;0;0;0;0;0|]|], [|[|5;12;0;0;0;0;0;0;0;0; 0;0;0;0;0;0;0|]|], [|0|])
+    let rules = LibFS.readFileRulesD
     //printfn "%d" rules.[1].[8].[3]
 
     // TpReducePack

@@ -7,7 +7,8 @@ open FSharp.Data
 module LibFS =
   type TpConfmat = JsonProvider<"[[[1]]]">
   type TpDiConfs = JsonProvider<"""[{"a":[0], "b":[0], "c":[8], "d":[6]}]""">
-  type TpDiRules = JsonProvider<"[[[1]]]">
+  type TpPosout  = {number: int array; nolines: int array; value: int array; pos: int array array; plow: int array array; pupp: int array array; xx: int array}
+  type TpDiRules = JsonProvider<"""{"a":[0], "b":[0], "c":[8], "d":[[6]], "e":[[6]], "f":[[6]], "g":[6]}""">
 
   let readFileGoodConfsR =
     File.ReadAllText "4ctdata/goodConfs.txt" // VSCode
@@ -32,9 +33,9 @@ module LibFS =
     out
 
   let readFileRulesD =
-    File.ReadAllText "4ctdata/DiRules07.txt" // VSCode
-    //File.ReadAllText "../../../../4ctdata/DiRules07.txt" // Visual Studio
-    |> TpDiRules.Parse
+    let ind = TpDiRules.Parse <| File.ReadAllText "4ctdata/DiRules07.txt" // VSCode
+    //let ind = TpDiRules.Parse <| File.ReadAllText "../../../../4ctdata/DiRules07.txt" // Visual Studio
+    { number = ind.A; nolines = ind.B; value = ind.C; pos = ind.D; plow = ind.E; pupp = ind.F; xx = ind.G}
 
   let readFileTacticsD =
     File.ReadAllLines "4ctdata/DiTactics07.txt" // VSCode
