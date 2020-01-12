@@ -50,8 +50,31 @@ module Di =
     //  "No symmetry as requested")
     //Debug.Assert((posout.nolines.[i] = level + 1),
     //  "Level mismatch")
+    Debug.Assert((epsilon <> 0
+      || LibDischargeSymmetry.OutletForced(low.[lev],
+                                           upp.[lev],
+                                           posout.number.[i],
+                                           posout.nolines.[i],
+                                           posout.value.[i],
+                                           posout.pos.[i],
+                                           posout.plow.[i],
+                                           posout.pupp.[i],
+                                           posout.xx.[i],
+                                           k+1) = 1),
+      "Invalid symmetry")
+    (*Debug.Assert((LibDischargeSymmetry.ReflForced(low.[lev],
+                                                  upp.[lev],
+                                                  posout.number.[i],
+                                                  posout.nolines.[i],
+                                                  posout.value.[i],
+                                                  posout.pos.[i],
+                                                  posout.plow.[i],
+                                                  posout.pupp.[i],
+                                                  posout.xx.[i],
+                                                  k+1) = 1),
+      "Invalid reflected symmetry")*)
 
-
+    printfn "  checkSymmetry OK."
     ()
 
   // 2.Reduce
@@ -123,8 +146,6 @@ module Di =
 
   let discharge =
     printfn "start Dischage.fs"
-
-    LibDischarge.Hoge (1, 2, 3)
 
     let deg = 7
 
