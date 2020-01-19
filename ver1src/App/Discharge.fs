@@ -84,11 +84,45 @@ module Di =
   // 3.Hubcap
   let checkHubcap posout tac (low, upp, lev) deg =
     posout
+
   // 4.Condition
   let checkCondition1 (nn, mm) deg (low, upp, lev) n m nosym =
-    nosym
-  let checkCondition2 (nn, mm) (low, upp, lev) n m =
-    ((nn, mm), (low, upp, lev))
+    let ret = Array.tryFind (fun x -> 1 <= x && x <= 2 * deg) nn
+    match ret with
+      | None    -> nosym
+      | Some(_) -> nosym + 1
+  let checkCondition2 (nn : int array, mm : int array) (low : int array array, upp : int array array, lev) n m =
+    low.[lev+1] <- low.[lev]
+    upp.[lev+1] <- upp.[lev]
+    let aLowN = low.[lev].[n]
+    let aUppN = upp.[lev].[n]
+    if m > 0
+      then // new lower bound
+        if aLowN >= m || m > aUppN
+          then
+            //Debug.Assert(false, "Invalid lower bound in condition")
+            ((nn, mm), (low, upp, lev))
+          else
+            upp.[lev]    .[n] <- m - 1
+            low.[lev + 1].[n] <- m
+            nn.[lev]     <- n
+            nn.[lev + 1] <- 0
+            mm.[lev]     <- m
+            mm.[lev + 1] <- 0
+            ((nn, mm), (low, upp, lev))
+      else // new upper bound
+        if aLowN > -m || -m >= aUppN
+          then
+            Debug.Assert(false, "Invalid upper bound in condition")
+            ((nn, mm), (low, upp, lev))
+          else
+            upp.[lev]    .[n] <- 1 - m
+            low.[lev + 1].[n] <- -m
+            nn.[lev]     <- n
+            nn.[lev + 1] <- 0
+            mm.[lev]     <- m
+            mm.[lev + 1] <- 0
+            ((nn, mm), (low, upp, lev))
 
   // main routine
   let rec mainLoop (rP1 : TpReducePack1)
