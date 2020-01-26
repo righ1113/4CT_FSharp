@@ -82,7 +82,87 @@ module Di =
     (true, aStack, used, image)
 
   // 3.Hubcap
-  let checkHubcap posout tac (low, upp, lev) deg =
+  let checkHubcap (posout : LibFS.TpPosout) tac (low, upp, lev) deg : LibFS.TpPosout =
+
+    // 0.
+    let x       = Array.replicate (MAXVAL + 2) 0
+    let y       = Array.replicate (MAXVAL + 2) 0
+    let v       = Array.replicate (MAXVAL + 2) 0
+    let covered = Array.replicate (MAXVAL + 2) 0
+    let aux     = Array.replicate (MAXVAL + 2) 0
+    let s = Array.replicate (2 * MAXOUTLETS + 1) 0
+    //int i, j, a, total, deg;
+    //FILE *F = NULL;
+    //static tp_outlet outlet[MAXOUTLETS], *T;
+    let nouts = DIFNOUTS.[deg]
+    //static tp_posout posout[2 * MAXOUTLETS];
+
+    // 1.
+    x.[0] <- 7//i - 1;
+    printfn "Testing hubcap for:"
+    //PrintAxle(A);
+    printfn "Forced positioned outlets:"
+    //for i in 1..deg do
+      //let mutable a = 0 // a=1 if edge number printed
+      (*for (T = outlet, j = 0; j < nouts; ++j, ++T)
+        if OutletForced(A, T, i) then
+          if a = 0 then
+            printf "\nEdge %d: ", i
+            a = 1;
+          printfn "%d ", T->number*)
+    printfn ""
+
+    // 2.
+    let mutable total = 0
+    for i in 1..x.[0] do
+      //Debug.Assert((x.[i] >= 1 && x.[i] <= deg && y.[i] >= 1 && y.[i] <= deg),
+      //  (sprintf "Invalid hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]))
+      if x.[i] = y.[i] then
+        total <- total + 2 * v.[i] // repeated hubcap members listed once
+        //Debug.Assert((covered.[x.[i]] = 0),
+        //  "Invalid double cover")
+        covered.[x.[i]] <- -1
+      else
+        if aux.[x.[i]] = v.[i] then total <- total + 1
+        Debug.Assert((covered.[x.[i]] <> -1 && covered.[y.[i]] <> -1),
+          "Invalid double cover")
+        covered.[x.[i]] <- if covered.[x.[i]] = 0 then y.[i] else -1
+        covered.[y.[i]] <- if covered.[y.[i]] = 0 then x.[i] else -1
+
+    // 3.
+    let rec loop1 i =
+      if i <= deg then
+        //Debug.Assert((covered.[i] <> 0),
+        //  "Invalid hubcap")
+        if covered.[i] = -1 then
+          loop1 (i + 1)
+        //Debug.Assert((covered.[covered.[i]] = i),
+        //  "Invalid hubcap")
+        total <- total + aux.[i] // repeated hubcap members are only listed once
+        loop1 (i + 1)
+      else ()
+    loop1 1
+
+    // 4.
+    printfn "Total double cover cost is %d" total
+    Debug.Assert((total <= 20 * (deg - 6) + 1),
+      "Hubcap does not satisfy (H2)")
+
+    // 5.
+    for i in 1..x.[0] do
+      printfn "\n-->Checking hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]
+      for j in 0..(nouts-1) do
+        posout.xx.[j] <- x.[i]
+        s.[j] <- 0
+      if x.[i] <> y.[i] then
+        for j in (nouts-1)..(2 * nouts - 1) do
+          posout.xx.[j] <- y.[i]
+          s.[j] <- 0
+        s.[2 * nouts - 1] <- 99 // to indicate end of list
+      else
+        s.[nouts - 1] <- 99 // to indicate end of list
+      //CheckBound(A, posout, s, v[i], 0, 0, lineno, print);
+    printfn ""
     posout
 
   // 4.Condition
