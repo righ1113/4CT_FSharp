@@ -82,12 +82,26 @@ module Di =
     (true, aStack, used, image)
 
   // 3.Hubcap
-  let checkHubcap (posout : LibFS.TpPosout) tac (low, upp, lev) deg : LibFS.TpPosout =
+  let checkHubcap (posout : LibFS.TpPosout) (tac : string array) (low, upp, lev) deg : LibFS.TpPosout =
 
     // 0.
+    let rec transpose = function
+      | (_::_)::_ as m -> List.map List.head m :: transpose (List.map List.tail m)
+      | _ -> []
+
+    let xyv = (tac
+      |> Array.map ((fun str -> str.Split [|','; '('; ')'|])
+                    >> (Array.filter (not << String.IsNullOrEmpty))
+                    >> (Array.map (Int32.Parse >> int)) ) )
     let x       = Array.replicate (MAXVAL + 2) 0
     let y       = Array.replicate (MAXVAL + 2) 0
     let v       = Array.replicate (MAXVAL + 2) 0
+    let mutable cnt = 1
+    for line in xyv do
+      x.[cnt] <- line.[0]
+      y.[cnt] <- line.[1]
+      v.[cnt] <- line.[2]
+      cnt     <- cnt + 1
     let covered = Array.replicate (MAXVAL + 2) 0
     let aux     = Array.replicate (MAXVAL + 2) 0
     let s = Array.replicate (2 * MAXOUTLETS + 1) 0
@@ -98,7 +112,7 @@ module Di =
     //static tp_posout posout[2 * MAXOUTLETS];
 
     // 1.
-    x.[0] <- 7//i - 1;
+    x.[0] <- xyv.Length
     printfn "Testing hubcap for:"
     //PrintAxle(A);
     printfn "Forced positioned outlets:"
