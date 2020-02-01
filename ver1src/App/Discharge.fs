@@ -82,13 +82,13 @@ module Di =
     (true, aStack, used, image)
 
   // 3.Hubcap
-  let checkHubcap (posout : LibFS.TpPosout) (tac : string array) (low, upp, lev) deg : LibFS.TpPosout =
+  let checkHubcap (posout : LibFS.TpPosout)
+                  (tac : string array)
+                  ((low, upp, lev) as axles : TpAxle)
+                  deg
+                    : LibFS.TpPosout =
 
     // 0.
-    let rec transpose = function
-      | (_::_)::_ as m -> List.map List.head m :: transpose (List.map List.tail m)
-      | _ -> []
-
     let xyv = (tac
       |> Array.map ((fun str -> str.Split [|','; '('; ')'|])
                     >> (Array.filter (not << String.IsNullOrEmpty))
@@ -106,24 +106,30 @@ module Di =
     let aux     = Array.replicate (MAXVAL + 2) 0
     let s = Array.replicate (2 * MAXOUTLETS + 1) 0
     //int i, j, a, total, deg;
-    //FILE *F = NULL;
-    //static tp_outlet outlet[MAXOUTLETS], *T;
     let nouts = DIFNOUTS.[deg]
-    //static tp_posout posout[2 * MAXOUTLETS];
 
     // 1.
     x.[0] <- xyv.Length
     printfn "Testing hubcap for:"
     //PrintAxle(A);
     printfn "Forced positioned outlets:"
-    //for i in 1..deg do
-      //let mutable a = 0 // a=1 if edge number printed
-      (*for (T = outlet, j = 0; j < nouts; ++j, ++T)
-        if OutletForced(A, T, i) then
+    for i in 1..deg do
+      let mutable a = 0 // a=1 if edge number printed
+      for j in 0..(nouts-1) do
+        if LibDischargeSymmetry.OutletForced(low.[lev],
+                                             upp.[lev],
+                                             posout.number.[j],
+                                             posout.nolines.[j],
+                                             posout.value.[j],
+                                             posout.pos.[j],
+                                             posout.plow.[j],
+                                             posout.pupp.[j],
+                                             posout.xx.[j],
+                                             i) <> 0 then
           if a = 0 then
-            printf "\nEdge %d: ", i
-            a = 1;
-          printfn "%d ", T->number*)
+            printf "\nEdge %d: " i
+            a <- 1
+          printfn "%d " posout.number.[j]
     printfn ""
 
     // 2.

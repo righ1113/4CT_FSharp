@@ -19,6 +19,7 @@ namespace LibraryCS2 {
       for (i = 0; i < nolinesI; ++i) {
         p = posI[i];
         p = xxI + (p - 1) % deg < deg ? p + xxI : p + xxI - deg;
+        if (p >= puppI.Length){ p = puppI.Length - 1; }
         if (lowI[i] > lowI[p] || puppI[i] < puppI[p])
           return 0;
       }
