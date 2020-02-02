@@ -67,64 +67,65 @@ namespace LibraryCS2 {
     public static void CheckBound(
       int[] lowI, int[] uppI, LibFS.TpPosout posout, int[] s, int maxch, int pos, int depth)
     {
-      int deg, i, p, x, good, forcedch, allowedch;
-      //int *sprime;
+      int deg, i, x, good, forcedch, allowedch;
+      int[] sprime = new int[2 * 110 + 1];
       //tp_axle *AA;
       //tp_posout *PO;
+      int ii;
 
       deg = lowI[0];
-/*
-      // compute forced and permitted rules, allowedch, forcedch, update s
+
+      // 1. compute forced and permitted rules, allowedch, forcedch, update s
       forcedch = allowedch = 0;
-      for (i = 0, PO = posout; s[i] < 99; i++, PO++) {
+      for (i = 0; s[i] < 99; i++) {
         if (s[i] > 0)
-          forcedch += PO->T->value;
-        if (s[i])
+          forcedch += posout.value[i];
+        if (s[i] != 0)
           continue;
-        if (OutletForced(A, PO->T, PO->x)) {
+        /*if (OutletForced(A, PO->T, PO->x)) {
           s[i] = 1;
           forcedch += PO->T->value;
         } else if (!OutletPermitted(A, PO->T, PO->x))
           s[i] = -1;
         else if (PO->T->value > 0)
           allowedch += PO->T->value;
+        */
       }
 
-      if (print >= PRTPAI) {
-        Indent(depth, "POs: ");
-        for (i = 0, PO = posout; s[i] < 99; i++, PO++) {
-          if (s[i] < 0)
-            continue;
-          if (s[i] == 0)
-            (void) printf("?");
-          (void) printf("%d,%d ", PO->T->number, PO->x);
-        }
-        (void) printf("\n");
-      }
-      // check if inequality holds
-      if (forcedch + allowedch <= maxch) {
-        if (print >= PRTPAI)
-        Indent(depth, "Inequality holds. Case done.\n");
-        return;
-      }
-      // check reducibility
-      if (forcedch > maxch) {
-        if (Reduce(A, lineno, print >= PRTALL ? 1 : 0) != 1)
-          Error("Incorrect hubcap upper bound", lineno);
-        if (print >= PRTPAI && print < PRTALL)
-          Indent(depth, "Reducible. Case done.\n");
-        return;
-      }
-      ALLOC(sprime, 2 * MAXOUTLETS + 1, int);
-      ALLOC(AA, 1, tp_axle);
-
-      for (PO = posout + pos; s[pos] < 99; pos++, PO++) {
-        if (s[pos] || PO->T->value < 0)
+      // 2.
+      Console.Write("{0} POs: ", depth);
+      for (i = 0; s[i] < 99; i++) {
+        if (s[i] < 0)
           continue;
-        x = PO->x;
+        if (s[i] == 0)
+          Console.Write("?");
+        Console.Write("{0},{1} ", posout.number[i], posout.xx[i]);
+      }
+      Console.Write("\n");
+
+      // 3. check if inequality holds
+      if (forcedch + allowedch <= maxch) {
+        Console.Write("{0} Inequality holds. Case done.\n", depth);
+        return;
+      }
+
+      // 4. check reducibility
+      /*if (forcedch > maxch) {
+        Debug.Assert((Reduce(A, 0, 1) == 1),
+          "Incorrect hubcap upper bound");
+        Console.Write("{0} Reducible. Case done.\n", depth);
+        return;
+      }*/
+
+      // 5.
+      //for (PO = posout + pos; s[pos] < 99; pos++, PO++) {
+      for (ii = pos; s[pos] < 99; ii++) {
+        if (s[pos] != 0 || posout.value[ii] < 0)
+          continue;
+        x = posout.xx[ii];
 
         // accepting positioned outlet PO, computing AA
-        CopyAxle(AA, A);
+        /*CopyAxle(AA, A);
         for (i = 0; i < PO->T->nolines; ++i) {
           p = PO->T->pos[i];
           p = x - 1 + (p - 1) % deg < deg ? p + x - 1 : p + x - 1 - deg;
@@ -132,52 +133,56 @@ namespace LibraryCS2 {
             AA->low[p] = PO->T->low[i];
           if (PO->T->upp[i] < AA->upp[p])
             AA->upp[p] = PO->T->upp[i];
-          if (AA->low[p] > AA->upp[p])
-            Error("Unexpected error 321", lineno);
-        }
+          Debug.Assert((AA->low[p] <= AA->upp[p]),
+            "Unexpected error 321");
+        }*/
 
         // Check if a previously rejected positioned outlet is forced to apply
         good = 1;
         for (i = 0; i < pos; i++)
-          if (s[i] == -1 && OutletForced(AA, posout[i].T, posout[i].x)) {
-            if (print >= PRTPAI) {
-              Indent(depth, "Positioned outlet ");
-              (void) printf("%d,%d can't be forced, because it forces %d,%d\n", PO->T->number, x, posout[i].T->number, posout[i].x);
-            }
+          if (s[i] == -1
+              && LibDischargeSymmetry.OutletForced(lowI,
+                                                uppI,
+                                                posout.number[i],
+                                                posout.nolines[i],
+                                                posout.value[i],
+                                                posout.pos[i],
+                                                posout.plow[i],
+                                                posout.pupp[i],
+                                                posout.xx[i],
+                                                posout.xx[i]) != 0) {
+            Console.Write("{0} Positioned outlet ", depth);
+            Console.Write("{0},{1} can't be forced, because it forces {2},{3}\n", posout.number[ii], x, posout.number[i], posout.xx[i]);
             good = 0;
             break;
           }
-
-        if (good) {
+        if (good != 0) {
           // recursion with PO forced
           for (i = 0; (sprime[i] = s[i]) < 99; ++i)	// do nothing
             ;
           sprime[pos] = 1;
-          if (print >= PRTPAI) {
-            Indent(depth, "Starting recursion with ");
-            (void) printf("%d,%d forced\n", PO->T->number, x);
-          }
-          CheckBound(AA, posout, sprime, maxch, pos + 1, depth + 1, lineno, print);
+          Console.Write("{0} Starting recursion with ", depth);
+          Console.Write("{0},{1} forced\n", posout.number[ii], x);
+          //CheckBound(AA, posout, sprime, maxch, pos + 1, depth + 1, lineno, print);
         }
 
         // rejecting positioned outlet PO
-        if (print >= PRTPAI) {
-          Indent(depth, "Rejecting positioned outlet ");
-          (void) printf("%d,%d. ", PO->T->number, x);
-        }
+        Console.Write("{0} Rejecting positioned outlet ", depth);
+        Console.Write("{0},{1}. ", posout.number[ii], x);
         s[pos] = -1;
-        allowedch -= PO->T->value;
+        allowedch -= posout.value[ii];
         if (allowedch + forcedch <= maxch) {
-          if (print >= PRTPAI)
-            (void) printf("Inequality holds.\n");
-          free(sprime);
-          free(AA);
+          Console.Write("Inequality holds.\n");
           return;
-        } else if (print >= PRTPAI)
-          (void) printf("\n");
-      }	// pos
-      Error("Unexpected error 101", lineno);
-*/
+        } else {
+          Console.Write("\n");
+        }
+      }// pos
+
+      // 6.
+      Debug.Assert(false,
+        "Unexpected error 101");
+
     }// CheckBound
   }
 

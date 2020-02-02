@@ -181,7 +181,7 @@ module Di =
         s.[2 * nouts - 1] <- 99 // to indicate end of list
       else
         s.[nouts - 1] <- 99 // to indicate end of list
-      LibDischargeHubcap.CheckBound(low.[lev], upp.[lev], posout, s, v.[i], 0, 0)
+      //LibDischargeHubcap.CheckBound(low.[lev], upp.[lev], posout, s, v.[i], 0, 0)
     printfn ""
     posout
 
