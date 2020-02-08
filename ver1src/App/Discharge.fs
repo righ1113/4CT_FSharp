@@ -78,8 +78,9 @@ module Di =
     ()
 
   // 2.Reduce
-  let reduce (aStack, bLow, bUpp, adjmat) (edgelist, used, image, redquestions) axles =
-    (true, aStack, used, image)
+  //let reduce (aStack, bLow, bUpp, adjmat) (edgelist, used, image, redquestions) axles =
+  let reduce (rP1 : LibFS.TpReducePack1) (rP2 : LibFS.TpReducePack2) axles =
+    (true, rP1.axle, rP2.used, rP2.image)
 
   // 3.Hubcap
   let checkHubcap (posout : LibFS.TpPosout)
@@ -225,8 +226,8 @@ module Di =
             ((nn, mm), (low, upp, lev))
 
   // main routine
-  let rec mainLoop (rP1 : TpReducePack1)
-                   rP2
+  let rec mainLoop (rP1 : LibFS.TpReducePack1)
+                   (rP2 : LibFS.TpReducePack2)
                    posout
                    (nn, mm)
                    deg
@@ -249,10 +250,10 @@ module Di =
                 "Q.E.D"
             | "R" ->
                 printfn "Reduce"
-                let (retB, (aStack' : TpAxle), used', image') = reduce rP1 rP2 axles
+                let (retB, (aStack' : LibFS.TpAxle), used', image') = reduce rP1 rP2 axles
                 if retB then
-                  mainLoop (setl _1 aStack' rP1)
-                           (setl _3 image' (setl _2 used' rP2))
+                  mainLoop { rP1 with axle = aStack'; } //(setl _1 aStack' rP1)
+                           { rP2 with used = used'; image = image'} //(setl _3 image' (setl _2 used' rP2))
                            posout
                            (nn, mm)
                            deg
@@ -314,17 +315,17 @@ module Di =
     let qV       = Array.replicate VERTS 0
     let qZ       = Array.replicate VERTS 0
     let qXi      = Array.replicate VERTS 0
-    //redQStr      <- readFile "readFile/unavoidableHS.txt"
-    //let redQ     = read redQStr :: [TpQuestion] // (void) Reduce(NULL, 0, 0); -- read unavoidable set
     let graphs = LibFS.readFileGoodConfsD
-    //printfn "%d" graphs.[5].C.[1]
+    let axlepk : LibFS.TpAxle = {low = aSLow; upp = aSUpp; lev = 0;}
+    let redpk1 : LibFS.TpReducePack1 = {axle = axlepk; bLow = bLow; bUpp = bUpp; adjmat = {adj = adjmat};}
+    let redpk2 : LibFS.TpReducePack2 = {edgelist = {edg = edgelist}; used = used; image = {ver = image}; redquestions = graphs}
 
 
     //inStr <- readFile $ "readFile/present" ++ degStr
     let tactics = LibFS.readFileTacticsD
     printfn "%s" tactics.[13].[2]
-    let ret = mainLoop ((aSLow, aSUpp, 0), bLow, bUpp, adjmat)
-                       (edgelist, used, image, graphs)
+    let ret = mainLoop redpk1 //((aSLow, aSUpp, 0), bLow, bUpp, adjmat)
+                       redpk2 //(edgelist, used, image, graphs)
                        rules
                        (nn, mm)
                        deg
