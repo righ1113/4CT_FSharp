@@ -19,23 +19,24 @@ module Di =
   let MAXLEV     = 12             // max level of an input line + 1
   let DIFNOUTS   = [0; 0; 0; 0; 0; 0; 0; 103; 103; 103; 103; 103]
 
-  type TpAxle        = int array array * int array array * int
+  //type TpAxle        = int array array * int array array * int
   type TpAxleI       = int array * int array
   type TpCond        = int array * int array
-  type TpAdjmat      = int array array
-  type TpVertices    = int array
-  type TpQuestion    = int array * int array * int array * int array
-  type TpEdgelist    = int array array array
+  //type TpAdjmat      = int array array
+  //type TpVertices    = int array
+  //type TpQuestion    = int array * int array * int array * int array
+  //type TpEdgelist    = int array array array
   //type TpPosout      = int array * int array * int array * int array array * int array array * int array array * int array
   type TpPosoutI     = int * int * int * int array * int array * int array * int
-  type TpReducePack1 = TpAxle * int array * int array * TpAdjmat
-  type TpReducePack2 = TpEdgelist * bool array * TpVertices * TpQuestion array
-  type TpConfPack    = bool * int * bool array * TpVertices * int
+  //type TpReducePack1 = TpAxle * int array * int array * TpAdjmat
+  //type TpReducePack2 = TpEdgelist * bool array * TpVertices * TpQuestion array
+  type TpConfPack    = bool * int * bool array * LibFS.TpVertices * int
+
 
   // 1.Symmetry
   // Assertに引っかからなければ良し
   let checkSymmetry (str : string array)
-                    ((low, upp, lev) as axles : TpAxle)
+                    (axles : LibFS.TpAxle)
                     (posout : LibFS.TpPosout)
                     nosym =
     let k       = int (Int32.Parse str.[0])
@@ -51,8 +52,8 @@ module Di =
     //Debug.Assert((posout.nolines.[i] = level + 1),
     //  "Level mismatch")
     Debug.Assert((epsilon <> 0
-      || LibDischargeSymmetry.OutletForced(low.[lev],
-                                           upp.[lev],
+      || LibDischargeSymmetry.OutletForced(axles.low.[axles.lev],
+                                           axles.upp.[axles.lev],
                                            posout.number.[i],
                                            posout.nolines.[i],
                                            posout.value.[i],
@@ -77,17 +78,23 @@ module Di =
     printfn "  checkSymmetry OK."
     ()
 
+
   // 2.Reduce
-  //let reduce (aStack, bLow, bUpp, adjmat) (edgelist, used, image, redquestions) axles =
-  let reduce (rP1 : LibFS.TpReducePack1) (rP2 : LibFS.TpReducePack2) axles =
-    (true, rP1.axle, rP2.used, rP2.image)
+  let reduce (rP1   : LibFS.TpReducePack1)
+             (rP2   : LibFS.TpReducePack2)
+             (axles : LibFS.TpAxle)
+               : LibFS.TpReduceRet =
+    LibDischargeReduce.Reduce(rP1, rP2, axles)
+
 
   // 3.Hubcap
   let checkHubcap (posout : LibFS.TpPosout)
-                  (tac : string array)
-                  ((low, upp, lev) as axles : TpAxle)
-                  deg
-                    : LibFS.TpPosout =
+                  (tac    : string array)
+                  (axles  : LibFS.TpAxle)
+                  (deg    : int)
+                  (rP1    : LibFS.TpReducePack1)
+                  (rP2    : LibFS.TpReducePack2)
+                    : LibFS.TpPosout * LibFS.TpReduceRet =
 
     // 0.
     let xyv = (tac
@@ -117,8 +124,8 @@ module Di =
     for i in 1..deg do
       let mutable a = 0 // a=1 if edge number printed
       for j in 0..(nouts-1) do
-        if LibDischargeSymmetry.OutletForced(low.[lev],
-                                             upp.[lev],
+        if LibDischargeSymmetry.OutletForced(axles.low.[axles.lev],
+                                             axles.upp.[axles.lev],
                                              posout.number.[j],
                                              posout.nolines.[j],
                                              posout.value.[j],
@@ -169,8 +176,23 @@ module Di =
     Debug.Assert((total <= 20 * (deg - 6) + 1),
       "Hubcap does not satisfy (H2)")
 
-    // 5.
-    for i in 1..x.[0] do
+    // 5. （二度書き）
+    let i = 1
+    printfn "\n-->Checking hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]
+    for j in 0..(nouts-1) do
+      posout.xx.[j] <- x.[i]
+      s.[j] <- 0
+    if x.[i] <> y.[i] then
+      for j in (nouts-1)..(2 * nouts - 1) do
+        posout.xx.[j] <- y.[i]
+        s.[j] <- 0
+      s.[2 * nouts - 1] <- 99 // to indicate end of list
+    else
+      s.[nouts - 1] <- 99 // to indicate end of list
+    let ret = LibDischargeHubcap.CheckBound(posout, s, v.[i], 0, 0, rP1, rP2, axles)
+    let mutable rrP1 = { rP1 with axle = ret.axle; }
+    let mutable rrP2 = { rP2 with used = ret.used; image = ret.image; }
+    for i in 2..x.[0] do
       printfn "\n-->Checking hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]
       for j in 0..(nouts-1) do
         posout.xx.[j] <- x.[i]
@@ -182,48 +204,52 @@ module Di =
         s.[2 * nouts - 1] <- 99 // to indicate end of list
       else
         s.[nouts - 1] <- 99 // to indicate end of list
-      //LibDischargeHubcap.CheckBound(low.[lev], upp.[lev], posout, s, v.[i], 0, 0)
+      let ret = LibDischargeHubcap.CheckBound(posout, s, v.[i], 0, 0, rrP1, rrP2, axles)
+      rrP1 <- { rrP1 with axle = ret.axle; }
+      rrP2 <- { rrP2 with used = ret.used; image = ret.image; }
     printfn ""
-    posout
+    (posout, ret)
+
 
   // 4.Condition
-  let checkCondition1 (nn, mm) deg (low, upp, lev) n m nosym =
+  let checkCondition1 (nn, mm) deg axles n m nosym =
     let ret = Array.tryFind (fun x -> 1 <= x && x <= 2 * deg) nn
     match ret with
       | None    -> nosym
       | Some(_) -> nosym + 1
-  let checkCondition2 (nn : int array, mm : int array) (low : int array array, upp : int array array, lev) n m =
-    low.[lev+1] <- low.[lev]
-    upp.[lev+1] <- upp.[lev]
-    let aLowN = low.[lev].[n]
-    let aUppN = upp.[lev].[n]
+  let checkCondition2 (nn : int array, mm : int array) (axles : LibFS.TpAxle) n m =
+    axles.low.[axles.lev+1] <- axles.low.[axles.lev]
+    axles.upp.[axles.lev+1] <- axles.upp.[axles.lev]
+    let aLowN = axles.low.[axles.lev].[n]
+    let aUppN = axles.upp.[axles.lev].[n]
     if m > 0
       then // new lower bound
         if aLowN >= m || m > aUppN
           then
             //Debug.Assert(false, "Invalid lower bound in condition")
-            ((nn, mm), (low, upp, lev))
+            ((nn, mm), (axles.low, axles.upp, axles.lev))
           else
-            upp.[lev]    .[n] <- m - 1
-            low.[lev + 1].[n] <- m
-            nn.[lev]     <- n
-            nn.[lev + 1] <- 0
-            mm.[lev]     <- m
-            mm.[lev + 1] <- 0
-            ((nn, mm), (low, upp, lev))
+            axles.upp.[axles.lev]    .[n] <- m - 1
+            axles.low.[axles.lev + 1].[n] <- m
+            nn.[axles.lev]     <- n
+            nn.[axles.lev + 1] <- 0
+            mm.[axles.lev]     <- m
+            mm.[axles.lev + 1] <- 0
+            ((nn, mm), (axles.low, axles.upp, axles.lev))
       else // new upper bound
         if aLowN > -m || -m >= aUppN
           then
             Debug.Assert(false, "Invalid upper bound in condition")
-            ((nn, mm), (low, upp, lev))
+            ((nn, mm), (axles.low, axles.upp, axles.lev))
           else
-            upp.[lev]    .[n] <- 1 - m
-            low.[lev + 1].[n] <- -m
-            nn.[lev]     <- n
-            nn.[lev + 1] <- 0
-            mm.[lev]     <- m
-            mm.[lev + 1] <- 0
-            ((nn, mm), (low, upp, lev))
+            axles.upp.[axles.lev]    .[n] <- 1 - m
+            axles.low.[axles.lev + 1].[n] <- -m
+            nn.[axles.lev]     <- n
+            nn.[axles.lev + 1] <- 0
+            mm.[axles.lev]     <- m
+            mm.[axles.lev + 1] <- 0
+            ((nn, mm), (axles.low, axles.upp, axles.lev))
+
 
   // main routine
   let rec mainLoop (rP1 : LibFS.TpReducePack1)
@@ -232,9 +258,9 @@ module Di =
                    (nn, mm)
                    deg
                    nosym
-                   ((low, upp, lev) as axles)
+                   (axles : LibFS.TpAxle)
                    tactics =
-    match lev with
+    match axles.lev with
       | lev when lev >= MAXLEV ->
           Debug.Assert(false, "More than %d levels")
           "error1"
@@ -250,30 +276,37 @@ module Di =
                 "Q.E.D"
             | "R" ->
                 printfn "Reduce"
-                let (retB, (aStack' : LibFS.TpAxle), used', image') = reduce rP1 rP2 axles
-                if retB then
-                  mainLoop { rP1 with axle = aStack'; } //(setl _1 aStack' rP1)
-                           { rP2 with used = used'; image = image'} //(setl _3 image' (setl _2 used' rP2))
+                let ret : LibFS.TpReduceRet = reduce rP1 rP2 axles
+                if ret.retB then
+                  mainLoop { rP1 with axle = ret.axle; } //(setl _1 aStack' rP1)
+                           { rP2 with used = ret.used; image = ret.image} //(setl _3 image' (setl _2 used' rP2))
                            posout
                            (nn, mm)
                            deg
                            nosym
-                           (low, upp, lev - 1)
+                           { axles with lev = axles.lev - 1; }
                            (Array.tail tactics)
                 else
                   Debug.Assert(false, "Reducibility failed")
                   "error3"
             | "H" ->
                 printfn "Hubcap"
-                let posout' = checkHubcap posout (Array.tail (Array.tail (Array.head tactics))) axles deg
-                mainLoop rP1 rP2 posout' (nn, mm) deg nosym (low, upp, lev - 1) (Array.tail tactics)
+                let (posout', ret) = checkHubcap posout (Array.tail (Array.tail (Array.head tactics))) axles deg rP1 rP2
+                mainLoop { rP1 with axle = ret.axle; }
+                         { rP2 with used = ret.used; image = ret.image}
+                         posout'
+                         (nn, mm)
+                         deg
+                         nosym
+                         { axles with lev = axles.lev - 1; }
+                         (Array.tail tactics)
             | "C" ->
                 printfn "Condition"
                 let n = int (Int32.Parse (Array.head tactics).[2])
                 let m = int (Int32.Parse (Array.head tactics).[3])
                 let nosym2                   = checkCondition1 (nn, mm) deg axles n m nosym
                 let (cond2, (low2, upp2, _)) = checkCondition2 (nn, mm) axles n m
-                mainLoop rP1 rP2 posout cond2 deg nosym2 (low2, upp2, lev + 1) (Array.tail tactics)
+                mainLoop rP1 rP2 posout cond2 deg nosym2 {low = low2; upp = upp2; lev = axles.lev + 1} (Array.tail tactics)
                 //"Q.E.D."
             | _   ->
                 Debug.Assert(false, "Invalid instruction")
@@ -330,7 +363,7 @@ module Di =
                        (nn, mm)
                        deg
                        0
-                       (axlesLow, axlesUpp, 0)
+                       {low = axlesLow; upp = axlesUpp; lev = 0}
                        (Array.tail tactics)
 
     // final check

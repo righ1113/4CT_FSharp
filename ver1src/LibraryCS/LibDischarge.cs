@@ -64,16 +64,18 @@ namespace LibraryCS2 {
         CheckBound
     Verifies (H1)
     *************************************************************************/
-    public static void CheckBound(
-      int[] lowI, int[] uppI, LibFS.TpPosout posout, int[] s, int maxch, int pos, int depth)
+    public static LibFS.TpReduceRet CheckBound(
+      LibFS.TpPosout posout, int[] s, int maxch, int pos, int depth, LibFS.TpReducePack1 rP1, LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
     {
       int deg, i, x, good, forcedch, allowedch;
       int[] sprime = new int[2 * 110 + 1];
       //tp_axle *AA;
       //tp_posout *PO;
       int ii;
+      LibFS.TpReduceRet ret;
+      LibFS.TpReduceRet ret2 = new LibFS.TpReduceRet(true, rP1.axle, rP2.used, rP2.image);
 
-      deg = lowI[0];
+      deg = axles.low[axles.lev][0];
 
       // 1. compute forced and permitted rules, allowedch, forcedch, update s
       forcedch = allowedch = 0;
@@ -106,16 +108,18 @@ namespace LibraryCS2 {
       // 3. check if inequality holds
       if (forcedch + allowedch <= maxch) {
         Console.Write("{0} Inequality holds. Case done.\n", depth);
-        return;
+        return ret2;
       }
 
       // 4. check reducibility
-      /*if (forcedch > maxch) {
-        Debug.Assert((Reduce(A, 0, 1) == 1),
+      if (forcedch > maxch) {
+        ret = LibDischargeReduce.Reduce(rP1, rP2, axles);
+        Debug.Assert(ret.retB,
           "Incorrect hubcap upper bound");
         Console.Write("{0} Reducible. Case done.\n", depth);
-        return;
-      }*/
+        LibFS.TpReduceRet ret3 = new LibFS.TpReduceRet(true, ret.axle, ret.used, ret.image);
+        return ret3;
+      }
 
       // 5.
       //for (PO = posout + pos; s[pos] < 99; pos++, PO++) {
@@ -141,16 +145,16 @@ namespace LibraryCS2 {
         good = 1;
         for (i = 0; i < pos; i++)
           if (s[i] == -1
-              && LibDischargeSymmetry.OutletForced(lowI,
-                                                uppI,
-                                                posout.number[i],
-                                                posout.nolines[i],
-                                                posout.value[i],
-                                                posout.pos[i],
-                                                posout.plow[i],
-                                                posout.pupp[i],
-                                                posout.xx[i],
-                                                posout.xx[i]) != 0) {
+              && LibDischargeSymmetry.OutletForced(axles.low[axles.lev],
+                                                   axles.upp[axles.lev],
+                                                   posout.number[i],
+                                                   posout.nolines[i],
+                                                   posout.value[i],
+                                                   posout.pos[i],
+                                                   posout.plow[i],
+                                                   posout.pupp[i],
+                                                   posout.xx[i],
+                                                   posout.xx[i]) != 0) {
             Console.Write("{0} Positioned outlet ", depth);
             Console.Write("{0},{1} can't be forced, because it forces {2},{3}\n", posout.number[ii], x, posout.number[i], posout.xx[i]);
             good = 0;
@@ -163,7 +167,8 @@ namespace LibraryCS2 {
           sprime[pos] = 1;
           Console.Write("{0} Starting recursion with ", depth);
           Console.Write("{0},{1} forced\n", posout.number[ii], x);
-          //CheckBound(AA, posout, sprime, maxch, pos + 1, depth + 1, lineno, print);
+          //注意AA
+          //CheckBound(lowI, uppI, posout, sprime, maxch, pos + 1, depth + 1, rP1, rP2, axles);
         }
 
         // rejecting positioned outlet PO
@@ -173,7 +178,7 @@ namespace LibraryCS2 {
         allowedch -= posout.value[ii];
         if (allowedch + forcedch <= maxch) {
           Console.Write("Inequality holds.\n");
-          return;
+          return ret2;
         } else {
           Console.Write("\n");
         }
@@ -182,8 +187,18 @@ namespace LibraryCS2 {
       // 6.
       Debug.Assert(false,
         "Unexpected error 101");
+      return ret2;
 
     }// CheckBound
+  }
+
+  public class LibDischargeReduce {
+    public static LibFS.TpReduceRet Reduce(
+      LibFS.TpReducePack1 rP1, LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
+    {
+      LibFS.TpReduceRet ret = new LibFS.TpReduceRet(true, rP1.axle, rP2.used, rP2.image);
+      return ret;
+    }
   }
 
 }

@@ -17,6 +17,7 @@ module LibFS =
   type TpVertices    = {ver: int array}
   type TpQuestion    = {qa: int array; qb: int array; qc: int array; qd: int array}
   type TpReducePack2 = {edgelist: TpEdgelist; used: bool array; image: TpVertices; redquestions: TpQuestion array}
+  type TpReduceRet   = {retB: bool; axle: TpAxle; used: bool array; image: TpVertices}
 
 
   let readFileGoodConfsR =
