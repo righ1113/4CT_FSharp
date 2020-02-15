@@ -193,11 +193,77 @@ namespace LibraryCS2 {
   }
 
   public class LibDischargeReduce {
+    public const int MAXASTACK   = 5;              // max height of Astack (see "Reduce")
+
     public static LibFS.TpReduceRet Reduce(
       LibFS.TpReducePack1 rP1, LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
     {
-      LibFS.TpReduceRet ret = new LibFS.TpReduceRet(true, rP1.axle, rP2.used, rP2.image);
-      return ret;
+      int h, i, j, v, redring, redverts;
+      int naxles, noconf;//static
+      /*static tp_confmat *conf;
+      static tp_edgelist edgelist;
+      static tp_adjmat adjmat;
+      static tp_vertices image;
+      static tp_axle **Astack, *B;
+      static tp_question *redquestions;*/
+
+      LibFS.TpReduceRet retT = new LibFS.TpReduceRet(true,  rP1.axle, rP2.used, rP2.image);
+      LibFS.TpReduceRet retF = new LibFS.TpReduceRet(false, rP1.axle, rP2.used, rP2.image);
+
+      /* This part is executed when A!=NULL */
+      Console.Write("Testing reducibility. Putting input axle on stack.\n");
+      //CopyAxle(Astack[0], A);
+
+      for (naxles = 1; naxles > 0 && naxles < MAXASTACK;) {
+        //CopyAxle(B, Astack[--naxles]);
+        Console.Write("Axle from stack:");
+        //PrintAxle(B);
+        //Getadjmat(B, adjmat);
+        //GetEdgelist(B, edgelist);
+        noconf = 0;
+        for (h = 0; h < noconf; ++h)
+          //if (SubConf(adjmat, B->upp, redquestions[h], edgelist, image))
+          //  break;
+        if (h == noconf) {
+          Console.Write("Not reducible\n");
+          return retF;
+        }
+        /* Semi-reducibility test found h-th configuration, say K, appearing */
+        redverts = rP2.redquestions[h].qa[1];
+        redring  = rP2.redquestions[h].qb[1];
+        /* the above are no vertices and ring-size of free completion of K */
+        /* could not use conf[h][0][0], because conf may be NULL           */
+
+        Console.Write("Conf({0},{1},{2}): ", h / 70 + 1, (h % 70) / 7 + 1, h % 7 + 1);
+        for (j = 1; j <= redverts; j++) {
+          if (rP2.image.ver[j] != -1)
+              Console.Write(" {0}({1})", rP2.image.ver[j], j);
+        }
+        Console.Write("\n");
+        //if (conf != NULL)
+        //  CheckIso(conf[h], B, image, lineno);
+        /* Double-check isomorphism */
+
+        for (i = redring + 1; i <= redverts; i++) {
+          v = rP2.image.ver[i];
+          //if (B->low[v] == B->upp[v])
+          //  continue;
+          Console.Write("Lowering upper bound of vertex ");
+          //Console.Write("{0} to {1} and adding to stack\n", v, B->upp[v] - 1);
+
+          Debug.Assert((naxles < MAXASTACK),
+            "More than %d elements in axle stack needed\n");
+
+          //CopyAxle(Astack[naxles], B);
+          //Astack[naxles]->upp[v] = B->upp[v] - 1;
+          naxles++;
+        }
+
+      }//naxles
+
+      Console.Write("All possibilities for lower degrees tested\n");
+      return retT;
+
     }
   }
 
