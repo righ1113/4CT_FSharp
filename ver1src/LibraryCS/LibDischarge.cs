@@ -65,7 +65,7 @@ namespace LibraryCS2 {
     Verifies (H1)
     *************************************************************************/
     public static LibFS.TpReduceRet CheckBound(
-      LibFS.TpPosout posout, int[] s, int maxch, int pos, int depth, LibFS.TpReducePack1 rP1, LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
+      LibFS.TpPosout posout, int[] s, int maxch, int pos, int depth, ref LibFS.TpReducePack1 rP1, ref LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
     {
       int deg, i, x, good, forcedch, allowedch;
       int[] sprime = new int[2 * 110 + 1];
@@ -113,7 +113,7 @@ namespace LibraryCS2 {
 
       // 4. check reducibility
       if (forcedch > maxch) {
-        ret = LibDischargeReduce.Reduce(rP1, rP2, axles);
+        ret = LibDischargeReduce.Reduce(ref rP1, ref rP2, axles);
         Debug.Assert(ret.retB,
           "Incorrect hubcap upper bound");
         Console.Write("{0} Reducible. Case done.\n", depth);
@@ -196,10 +196,10 @@ namespace LibraryCS2 {
     public const int MAXASTACK   = 5;              // max height of Astack (see "Reduce")
 
     public static LibFS.TpReduceRet Reduce(
-      LibFS.TpReducePack1 rP1, LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
+      ref LibFS.TpReducePack1 rP1, ref LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
     {
       int h, i, j, v, redring, redverts;
-      int naxles, noconf;//static
+      int naxles, noconf;
       /*static tp_confmat *conf;
       static tp_edgelist edgelist;
       static tp_adjmat adjmat;
@@ -214,13 +214,13 @@ namespace LibraryCS2 {
       Console.Write("Testing reducibility. Putting input axle on stack.\n");
       //CopyAxle(Astack[0], A);
 
+      noconf = 0; //633;
       for (naxles = 1; naxles > 0 && naxles < MAXASTACK;) {
         //CopyAxle(B, Astack[--naxles]);
         Console.Write("Axle from stack:");
         //PrintAxle(B);
         //Getadjmat(B, adjmat);
         //GetEdgelist(B, edgelist);
-        noconf = 0;
         for (h = 0; h < noconf; ++h)
           //if (SubConf(adjmat, B->upp, redquestions[h], edgelist, image))
           //  break;

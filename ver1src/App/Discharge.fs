@@ -80,11 +80,11 @@ module Di =
 
 
   // 2.Reduce
-  let reduce (rP1   : LibFS.TpReducePack1)
-             (rP2   : LibFS.TpReducePack2)
+  let reduce (rP1   : byref<LibFS.TpReducePack1>)
+             (rP2   : byref<LibFS.TpReducePack2>)
              (axles : LibFS.TpAxle)
                : LibFS.TpReduceRet =
-    LibDischargeReduce.Reduce(rP1, rP2, axles)
+    LibDischargeReduce.Reduce(&rP1, &rP2, axles)
 
 
   // 3.Hubcap
@@ -92,8 +92,8 @@ module Di =
                   (tac    : string array)
                   (axles  : LibFS.TpAxle)
                   (deg    : int)
-                  (rP1    : LibFS.TpReducePack1)
-                  (rP2    : LibFS.TpReducePack2)
+                  (rP1    : byref<LibFS.TpReducePack1>)
+                  (rP2    : byref<LibFS.TpReducePack2>)
                     : LibFS.TpPosout * LibFS.TpReduceRet =
 
     // 0.
@@ -189,9 +189,9 @@ module Di =
       s.[2 * nouts - 1] <- 99 // to indicate end of list
     else
       s.[nouts - 1] <- 99 // to indicate end of list
-    let ret = LibDischargeHubcap.CheckBound(posout, s, v.[i], 0, 0, rP1, rP2, axles)
-    let mutable rrP1 = { rP1 with axle = ret.axle; }
-    let mutable rrP2 = { rP2 with used = ret.used; image = ret.image; }
+    let ret = LibDischargeHubcap.CheckBound(posout, s, v.[i], 0, 0, &rP1, &rP2, axles)
+    let mutable rrP1 = rP1 //{ rP1 with axle = ret.axle; }
+    let mutable rrP2 = rP2 //{ rP2 with used = ret.used; image = ret.image; }
     for i in 2..x.[0] do
       printfn "\n-->Checking hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]
       for j in 0..(nouts-1) do
@@ -204,9 +204,9 @@ module Di =
         s.[2 * nouts - 1] <- 99 // to indicate end of list
       else
         s.[nouts - 1] <- 99 // to indicate end of list
-      let ret = LibDischargeHubcap.CheckBound(posout, s, v.[i], 0, 0, rrP1, rrP2, axles)
-      rrP1 <- { rrP1 with axle = ret.axle; }
-      rrP2 <- { rrP2 with used = ret.used; image = ret.image; }
+      LibDischargeHubcap.CheckBound(posout, s, v.[i], 0, 0, &rrP1, &rrP2, axles)
+      //rrP1 <- { rrP1 with axle = ret.axle; }
+      //rrP2 <- { rrP2 with used = ret.used; image = ret.image; }
     printfn ""
     (posout, ret)
 
@@ -252,8 +252,8 @@ module Di =
 
 
   // main routine
-  let rec mainLoop (rP1 : LibFS.TpReducePack1)
-                   (rP2 : LibFS.TpReducePack2)
+  let rec mainLoop (rP1 : byref<LibFS.TpReducePack1>)
+                   (rP2 : byref<LibFS.TpReducePack2>)
                    posout
                    (nn, mm)
                    deg
@@ -276,10 +276,10 @@ module Di =
                 "Q.E.D"
             | "R" ->
                 printfn "Reduce"
-                let ret : LibFS.TpReduceRet = reduce rP1 rP2 axles
+                let ret : LibFS.TpReduceRet = reduce &rP1 &rP2 axles
                 if ret.retB then
-                  mainLoop { rP1 with axle = ret.axle; } //(setl _1 aStack' rP1)
-                           { rP2 with used = ret.used; image = ret.image} //(setl _3 image' (setl _2 used' rP2))
+                  mainLoop &rP1 //{ rP1 with axle = ret.axle; } //(setl _1 aStack' rP1)
+                           &rP2 //{ rP2 with used = ret.used; image = ret.image} //(setl _3 image' (setl _2 used' rP2))
                            posout
                            (nn, mm)
                            deg
@@ -291,9 +291,9 @@ module Di =
                   "error3"
             | "H" ->
                 printfn "Hubcap"
-                let (posout', ret) = checkHubcap posout (Array.tail (Array.tail (Array.head tactics))) axles deg rP1 rP2
-                mainLoop { rP1 with axle = ret.axle; }
-                         { rP2 with used = ret.used; image = ret.image}
+                let (posout', ret) = checkHubcap posout (Array.tail (Array.tail (Array.head tactics))) axles deg &rP1 &rP2
+                mainLoop &rP1 //{ rP1 with axle = ret.axle; }
+                         &rP2 //{ rP2 with used = ret.used; image = ret.image}
                          posout'
                          (nn, mm)
                          deg
@@ -306,7 +306,7 @@ module Di =
                 let m = int (Int32.Parse (Array.head tactics).[3])
                 let nosym2                   = checkCondition1 (nn, mm) deg axles n m nosym
                 let (cond2, (low2, upp2, _)) = checkCondition2 (nn, mm) axles n m
-                mainLoop rP1 rP2 posout cond2 deg nosym2 {low = low2; upp = upp2; lev = axles.lev + 1} (Array.tail tactics)
+                mainLoop &rP1 &rP2 posout cond2 deg nosym2 {low = low2; upp = upp2; lev = axles.lev + 1} (Array.tail tactics)
                 //"Q.E.D."
             | _   ->
                 Debug.Assert(false, "Invalid instruction")
@@ -350,15 +350,15 @@ module Di =
     let qXi      = Array.replicate VERTS 0
     let graphs = LibFS.readFileGoodConfsD
     let axlepk : LibFS.TpAxle = {low = aSLow; upp = aSUpp; lev = 0;}
-    let redpk1 : LibFS.TpReducePack1 = {axle = axlepk; bLow = bLow; bUpp = bUpp; adjmat = {adj = adjmat};}
-    let redpk2 : LibFS.TpReducePack2 = {edgelist = {edg = edgelist}; used = used; image = {ver = image}; redquestions = graphs}
+    let mutable redpk1 : LibFS.TpReducePack1 = {axle = axlepk; bLow = bLow; bUpp = bUpp; adjmat = {adj = adjmat};}
+    let mutable redpk2 : LibFS.TpReducePack2 = {edgelist = {edg = edgelist}; used = used; image = {ver = image}; redquestions = graphs}
 
 
     //inStr <- readFile $ "readFile/present" ++ degStr
     let tactics = LibFS.readFileTacticsD
     printfn "%s" tactics.[13].[2]
-    let ret = mainLoop redpk1 //((aSLow, aSUpp, 0), bLow, bUpp, adjmat)
-                       redpk2 //(edgelist, used, image, graphs)
+    let ret = mainLoop &redpk1 //((aSLow, aSUpp, 0), bLow, bUpp, adjmat)
+                       &redpk2 //(edgelist, used, image, graphs)
                        rules
                        (nn, mm)
                        deg
