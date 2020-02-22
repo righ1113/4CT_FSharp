@@ -138,10 +138,22 @@ module Re =
     match structureTuple with
       | struct (ncodes1, live1) -> (ncodes1, live1)
 
-  // 4. updatelive()
-  //let checkreality depth weight live real (pnreal : byref<int>) ring basecol on (pbit : byref<int>) (prealterm : byref<int>) nchar =
-  //  ()
-  let rec augment n (interval : int array) depth (weight : int array array) (matchweight : int array array array) live real (pnreal : byref<int>) ring basecol on (pbit : byref<int>) (prealterm : byref<int>) nchar =
+  // 4. update()
+  let rec augment
+            n
+            (interval : int array)
+            depth
+            (weight : int array array)
+            (matchweight : int array array array)
+            live
+            real
+            (pnreal : byref<int>)
+            ring
+            basecol
+            on
+            (pbit : byref<int>)
+            (prealterm : byref<int>)
+            nchar =
     (* Finds all matchings such that every match is from one of the given
      * intervals. (The intervals should be disjoint, and ordered with smallest
      * first, and lower end given first.) For each such matching it examines all
@@ -234,7 +246,7 @@ module Re =
 
     ()
 
-  let updateliveSub (live : int array) ncols (p : byref<int>) =
+  let updateSub (live : int array) ncols (p : byref<int>) =
     (* runs through "live" to see which colourings still have `real' signed
      * matchings sitting on all three pairs of colour classes, and updates "live"
      * accordingly; returns 1 if nlive got smaller and stayed >0, and 0 otherwise *)
@@ -264,12 +276,12 @@ module Re =
         printfn "\n\n\n                ***  Not D-reducible  ***"
       false
 
-  let updatelive ring real live nchar ncodes (nlive : int) =
+  let update ring real live nchar ncodes (nlive : int) =
     let mutable nlive1 = nlive
     // stillreal()でliveに破壊的代入をおこなう
     testmatch ring real live nchar
     // nlive1、liveに破壊的代入をおこなう
-    while (updateliveSub live ncodes &nlive1) do
+    while (updateSub live ncodes &nlive1) do
       // stillreal()でliveに破壊的代入をおこなう
       testmatch ring real live nchar
       // computes {\cal M}_{i+1} from {\cal M}_i, updates the bits of "real" */
@@ -316,7 +328,6 @@ module Re =
     printfn "start Reduce.fs"
 
     let graphs = LibFS.readFileGoodConfsR
-    //printfn "%d" graphs.[1].[1].[0]
 
     let mutable i = 0
     for graph in Array.take 3 (Array.skip 302 graphs) do
@@ -343,9 +354,9 @@ module Re =
       let nchar  = SIMATCHNUMBER.[ring] / 8 + 1
       let (nlive1, live1) = findlive ring live0 ncodes angle graph.[0+1].[2]
 
-      // 4. updatelive()
+      // 4. update()
       // computes {\cal M}_{i+1} from {\cal M}_i, updates the bits of "real"
-      let (nlive2, live2) = updatelive ring real0 live1 nchar ncodes nlive1
+      let (nlive2, live2) = update ring real0 live1 nchar ncodes nlive1
       // computes {\cal C}_{i+1} from {\cal C}_i, updates "live"
 
       // 5. checkContract()
