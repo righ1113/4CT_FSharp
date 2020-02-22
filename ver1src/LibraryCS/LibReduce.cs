@@ -466,8 +466,8 @@ namespace LibraryCS {
           u |= ~c[sm[i]];
         forbidden[j] = u;
       }
-      //Debug.Assert(false,
-      //  "checkContractSub : It was not good though it was repeated 1024 times!");
+      Debug.Assert(false,
+        "checkContractSub : It was not good though it was repeated 1024 times!");
     }
   }
 }
