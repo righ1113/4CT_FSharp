@@ -279,10 +279,10 @@ module Re =
   // checks that no colouring in live is the restriction to E(R) of a
   // tri-coloring of the free extension modulo the specified contract
   let checkContract ring live2 nlive2 (diffangle : int array array) (sameangle : int array array) (contract : int array) =
-    //Debug.Assert(((nlive2 <> 0) || (contract.[0] <> 0)),
-    //  "         ***  ERROR: CONTRACT PROPOSED  ***\n\n")
-    //Debug.Assert((contract.[0] <> 0),
-    //  "       ***  ERROR: NO CONTRACT PROPOSED  ***\n\n")
+    Debug.Assert(((nlive2 <> 0) || (contract.[0] <> 0)),
+      "         ***  ERROR: CONTRACT PROPOSED  ***\n\n")
+    Debug.Assert((contract.[0] <> 0),
+      "       ***  ERROR: NO CONTRACT PROPOSED  ***\n\n")
     //Debug.Assert((nlive2 = contract.[EDGES]),
     //  "       ***  ERROR: DISCREPANCY IN EXTERIOR SIZE  ***\n\n")
 

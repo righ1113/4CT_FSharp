@@ -14,7 +14,7 @@ let main argv =
   printfn "これは四色定理を解くプログラムです。"
 
   printfn "1: reduce. 2: dischrge.  please select."
-  Console.ReadLine()
+  "1" //Console.ReadLine()
   |> fun str ->
     match str with
       | "1" -> Re.reduce
