@@ -272,8 +272,10 @@ namespace LibraryCS {
               return ((ncodes - extent), live);
           }
           c[j] = 1;
-          for (u = 0, i = 1; i <= angle[j][0]; i++)
+          for (u = 0, i = 1; i <= angle[j][0]; i++) {
+            if (i >= 5) break;
             u |= c[angle[j][i]];
+          }
           forbidden[j] = u;
         }
       }
