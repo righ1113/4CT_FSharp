@@ -23,7 +23,7 @@ module Re =
   let strip (graph : int array array) =
     let verts  = graph.[0+1].[0]
     let ring   = graph.[0+1].[1] // ring-size
-    let edgeno = Array.replicate EDGES (Array.replicate EDGES 0)
+    let edgeno = Array.init EDGES (fun _ -> Array.zeroCreate EDGES)
 
     // ★★★ stripSub1
     let mutable u = 0
@@ -35,7 +35,7 @@ module Re =
     let done0 = Array.replicate MVERTS false
     let mutable term  = 3 * (verts - 1) - ring
 
-    // ★★★ stripSub2
+    // stripSub2
     // edgeno, done0に破壊的代入をおこなう
     term <- LibReduceStrip.StripSub2 (MVERTS, graph, verts, ring, edgeno, done0, term)
     // This eventually lists all the internal edges of the configuration
@@ -45,7 +45,7 @@ module Re =
     let r6 = setl (items) 100 [0..4]
     printfn "%A" r6 *)
 
-    // ★★★ stripSub3
+    // stripSub3
     // Now we must list the edges between the interior and the ring
     let mutable maxint = 0
     for _ in 1..ring do
@@ -99,10 +99,10 @@ module Re =
         "         ***  ERROR: CONTRACT CONTAINS NON-EDGE  ***\n\n")
       contract.[edgeno.[u].[v+1]] <- 1
 
-    let angle     = Array.replicate EDGES (Array.replicate 5 0)
-    let diffangle = Array.replicate EDGES (Array.replicate 5 0)
-    let sameangle = Array.replicate EDGES (Array.replicate 5 0)
-    diffangle.[0].[0] <- 0 //graph.[0+1].[0]
+    let angle     = Array.init EDGES (fun _ -> Array.zeroCreate 5)
+    let diffangle = Array.init EDGES (fun _ -> Array.zeroCreate 5)
+    let sameangle = Array.init EDGES (fun _ -> Array.zeroCreate 5)
+    diffangle.[0].[0] <- graph.[0+1].[0]
     diffangle.[0].[1] <- graph.[0+1].[1]
     diffangle.[0].[2] <- edge
     angle.[0].[0]     <- diffangle.[0].[0]
@@ -122,10 +122,9 @@ module Re =
   (* computes {\cal C}_0 and stores it in live. That is, computes codes of
      colorings of the ring that are not restrictions of tri-colorings of the
      free extension. Returns the number of such codes *)
-  let findlive ring live0 ncodes (angle : int array array) extentclaim =
+  let findlive ring bigno live0 ncodes (angle : int array array) extentclaim =
     //let ring      = angle.[0].[1] // ring-size
     let ed        = angle.[0].[2]
-    let bigno     = (POWER.[ring + 1] - 1) / 2 // number of codes of colorings of R
     let c         = Array.replicate EDGES 0
     let j         = ed - 1
     c.[ed]        <- 1
@@ -200,9 +199,10 @@ module Re =
     let mutable realterm = 0
     // First, it generates the matchings not incident with the last ring edge
 
-    let matchweight = (Array.replicate 16 (Array.replicate 16 (Array.replicate 4 0)))
+    //let matchweight = (Array.replicate 16 (Array.replicate 16 (Array.replicate 4 0)))
+    let matchweight = Array.init 16 (fun _ -> (Array.init 16 (fun _ -> Array.zeroCreate 4)))
     let interval    = Array.replicate 10 0
-    let weight      = Array.replicate 16 (Array.replicate 4 0)
+    let weight      = Array.init 16 (fun _ -> Array.zeroCreate 4)
     for a in 2..ring do
       for b in 1..(a-1) do
         matchweight.[a].[b].[0] <- 2 * (POWER.[a] + POWER.[b])
@@ -290,15 +290,14 @@ module Re =
   // 5. checkContract()
   // checks that no colouring in live is the restriction to E(R) of a
   // tri-coloring of the free extension modulo the specified contract
-  let checkContract ring live2 nlive2 (diffangle : int array array) (sameangle : int array array) (contract : int array) =
-    Debug.Assert(((nlive2 <> 0) || (contract.[0] <> 0)),
-      "         ***  ERROR: CONTRACT PROPOSED  ***\n\n")
-    Debug.Assert((contract.[0] <> 0),
-      "       ***  ERROR: NO CONTRACT PROPOSED  ***\n\n")
+  let checkContract ring bigno live2 nlive2 (diffangle : int array array) (sameangle : int array array) (contract : int array) =
+    //Debug.Assert(((nlive2 <> 0) || (contract.[0] <> 0)),
+    //  "         ***  ERROR: CONTRACT PROPOSED  ***\n\n")
+    //Debug.Assert((contract.[0] <> 0),
+    //  "       ***  ERROR: NO CONTRACT PROPOSED  ***\n\n")
     //Debug.Assert((nlive2 = contract.[EDGES]),
     //  "       ***  ERROR: DISCREPANCY IN EXTERIOR SIZE  ***\n\n")
 
-    let bigno = (POWER.[ring + 1] - 1) / 2 // needed in "inlive"
     let mutable start = diffangle.[0].[2]
     let c = Array.replicate EDGES 0
     let forbidden = Array.replicate EDGES 0 // called F in the notes
@@ -330,7 +329,8 @@ module Re =
     let graphs = LibFS.readFileGoodConfsR
 
     let mutable i = 0
-    for graph in Array.take 3 (Array.skip 302 graphs) do
+    //for graph in Array.take 3 (Array.skip 302 graphs) do
+    for graph in Array.take 5 (graphs) do
       printfn "%d" i
       i <- i + 1
 
@@ -348,11 +348,12 @@ module Re =
 
       // 3. findlive()
       let ring   = graph.[0+1].[1] // ring-size
-      let ncodes = POWER.[ring + 1] / 2 // number of codes of colorings of R
+      let ncodes = (POWER.[ring    ] + 1) / 2 // number of codes of colorings of R
+      let bigno  = (POWER.[ring + 1] - 1) / 2 // needed in "inlive"
       let live0  = Array.replicate ncodes 1
       let real0  = Array.replicate (SIMATCHNUMBER.[MAXRING] / 8 + 2) 255
       let nchar  = SIMATCHNUMBER.[ring] / 8 + 1
-      let (nlive1, live1) = findlive ring live0 ncodes angle graph.[0+1].[2]
+      let (nlive1, live1) = findlive ring bigno live0 ncodes angle graph.[0+1].[2]
 
       // 4. update()
       // computes {\cal M}_{i+1} from {\cal M}_i, updates the bits of "real"
@@ -362,7 +363,7 @@ module Re =
       // 5. checkContract()
       (* This verifies that the set claimed to be a contract for the
          configuration really is. *)
-      checkContract ring live2 nlive2 diffangle sameangle contract
+      checkContract ring bigno live2 nlive2 diffangle sameangle contract
 
     true
 
