@@ -60,7 +60,7 @@ module Re =
             let u       = if v > 1    then v - 1 else ring
             let w       = if v < ring then v + 1 else 1
             let doneInt = if done0.[u] || done0.[w] then 1 else 0
-            let inter   = 3 * graph.[v+1].[0] + 4 * doneInt
+            let inter   = 3 * graph.[v+2].[0+1] + 4 * doneInt
             if inter > maxint then
               maxint <- inter
               best   <- v
@@ -69,7 +69,7 @@ module Re =
         else ()
       loop4 1
 
-      let grav = graph.[best+3]
+      let grav = graph.[best+2]
       let u    = if best > 1 then best - 1 else ring
       if done0.[u] then
         for h in (grav.[0+1] - 1) .. -1 .. 2 do
@@ -93,8 +93,8 @@ module Re =
     contract.[0]     <- graph.[1+1].[0] // number of edges in contract
     contract.[EDGES] <- graph.[0+1].[3]
     for i in 1..contract.[0] do
-      let u = graph.[1+1].[2 * i - 1]
-      let v = graph.[1+1].[2 * i]
+      let u = graph.[1+2].[2 * i - 1]
+      let v = graph.[1+2].[2 * i]
       Debug.Assert((edgeno.[u].[v+1] >= 1),
         "         ***  ERROR: CONTRACT CONTAINS NON-EDGE  ***\n\n")
       contract.[edgeno.[u].[v+1]] <- 1
@@ -199,7 +199,6 @@ module Re =
     let mutable realterm = 0
     // First, it generates the matchings not incident with the last ring edge
 
-    //let matchweight = (Array.replicate 16 (Array.replicate 16 (Array.replicate 4 0)))
     let matchweight = Array.init 16 (fun _ -> (Array.init 16 (fun _ -> Array.zeroCreate 4)))
     let interval    = Array.replicate 10 0
     let weight      = Array.init 16 (fun _ -> Array.zeroCreate 4)

@@ -50,7 +50,7 @@ namespace LibraryCS {
         for (v = ring + 1; v <= verts; v++) {
           if (done[v])
             continue;
-          inter = Ininterval(graph[v + 1], done);
+          inter = Ininterval(graph[v + 2], done);
           if (inter > maxint) {
             maxint = inter;
             maxes = 1;
@@ -62,7 +62,7 @@ namespace LibraryCS {
         /* From the terms in max we choose the one of maximum degree */
         maxdeg = 0;
         for (h = 1; h <= maxes; h++) {
-          d = graph[max[h] + 1][0];
+          d = graph[max[h] + 2][0+1];
           if (d > maxdeg) {
               maxdeg = d;
               best = max[h];
@@ -70,21 +70,21 @@ namespace LibraryCS {
         }
         /* So now, the vertex "best" will be the next vertex to be done */
 
-        d = graph[best + 1][0 + 1];
+        d = graph[best + 2][0 + 1];
         first = 1;
-        previous = done[graph[best + 1][d + 1]];
+        previous = done[graph[best + 2][d + 1]];
 
-        while ((previous) || (!done[graph[best + 1][first + 1]])) {
-          previous = done[graph[best + 1][1 + first++]];
+        while ((previous) || (!done[graph[best + 2][first + 1]])) {
+          previous = done[graph[best + 2][1 + first++]];
           if (first > d) {
             first = 1;
             break;
           }
         }
 
-        for (h = first; done[graph[best + 1][h + 1]]; h++) {
-          edgeno[best][graph[best + 1][h + 1]] = term;
-          edgeno[graph[best + 1][h + 1]][best] = term;
+        for (h = first; done[graph[best + 2][h + 1]]; h++) {
+          edgeno[best][graph[best + 2][h + 1]] = term;
+          edgeno[graph[best + 2][h + 1]][best] = term;
           term--;
           if (h == d) {
             if (first == 1)
@@ -280,8 +280,8 @@ namespace LibraryCS {
         }
       }
 
-      Debug.Assert(false,
-        "FindliveSub : It was not good though it was repeated 1024 times!");
+      //Debug.Assert(false,
+      //  "FindliveSub : It was not good though it was repeated 1024 times!");
       return (-1, live);
     }
   }
