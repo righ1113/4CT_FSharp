@@ -50,7 +50,7 @@ namespace LibraryCS {
         for (v = ring + 1; v <= verts; v++) {
           if (done[v])
             continue;
-          inter = Ininterval(graph[v + 1], done);
+          inter = Ininterval(graph[v + 2], done);
           if (inter > maxint) {
             maxint = inter;
             maxes = 1;
@@ -62,7 +62,7 @@ namespace LibraryCS {
         /* From the terms in max we choose the one of maximum degree */
         maxdeg = 0;
         for (h = 1; h <= maxes; h++) {
-          d = graph[max[h] + 1][0];
+          d = graph[max[h] + 2][0+1];
           if (d > maxdeg) {
               maxdeg = d;
               best = max[h];
@@ -70,21 +70,21 @@ namespace LibraryCS {
         }
         /* So now, the vertex "best" will be the next vertex to be done */
 
-        d = graph[best + 1][0 + 1];
+        d = graph[best + 2][0 + 1];
         first = 1;
-        previous = done[graph[best + 1][d + 1]];
+        previous = done[graph[best + 2][d + 1]];
 
-        while ((previous) || (!done[graph[best + 1][first + 1]])) {
-          previous = done[graph[best + 1][1 + first++]];
+        while ((previous) || (!done[graph[best + 2][first + 1]])) {
+          previous = done[graph[best + 2][1 + first++]];
           if (first > d) {
             first = 1;
             break;
           }
         }
 
-        for (h = first; done[graph[best + 1][h + 1]]; h++) {
-          edgeno[best][graph[best + 1][h + 1]] = term;
-          edgeno[graph[best + 1][h + 1]][best] = term;
+        for (h = first; done[graph[best + 2][h + 1]]; h++) {
+          edgeno[best][graph[best + 2][h + 1]] = term;
+          edgeno[graph[best + 2][h + 1]][best] = term;
           term--;
           if (h == d) {
             if (first == 1)
@@ -107,23 +107,23 @@ namespace LibraryCS {
       int d, e=0;
 
       for (v = 1; v <= graph[0+1][0]; v++) {
-        for (h = 1; h <= graph[v+2][0]; h++) {
+        for (h = 1; h <= graph[v+2][0+1]; h++) {
 
-          if ((v <= graph[0+1][1]) && (h == graph[v+2][0]))
+          if ((v <= graph[0+1][1]) && (h == graph[v+2][0+1]))
             continue;
           if (h >= graph[v+2].Length)
             break;
 
-          i = (h < graph[v+2].Length - 1) ? h + 1 : 1;
-          u = graph[v+2][h];
-          w = graph[v+2][i];
-          a = edgeno[v][w+1];
-          b = edgeno[u][w+1];
-          c = edgeno[u][v+1];
+          i = (h < graph[v+2][1]) ? h + 1 : 1;
+          u = graph[v+2][h+1];
+          w = graph[v+2][i+1];
+          a = edgeno[v][w];
+          b = edgeno[u][w];
+          c = edgeno[u][v];
 
           // どっちかが0なら通過
-          //Debug.Assert((contract[a]==0 || contract[b]==0),
-          //  "         ***  ERROR: CONTRACT IS NOT SPARSE  ***\n\n");
+          Debug.Assert((contract[a]==0 || contract[b]==0),
+            "         ***  ERROR: CONTRACT IS NOT SPARSE  ***\n\n");
 
           if (a > c) {
             d = (angle[c][0] >= 4) ? 4 : ++angle[c][0];
@@ -160,10 +160,10 @@ namespace LibraryCS {
 
       for (v = graph[0+1][1] + 1; v <= graph[0+1][0]; v++) {
         /* v is a candidate triad */
-        for (a = 0, i = 1; i <= graph[v+2][0]; i++) {
-          u = graph[v+1][i];
-          for (j = 5; j <= 12; j++)
-            if (u == graph[0+1][j]) {
+        for (a = 0, i = 1; i <= graph[v+2][0+1]; i++) {
+          u = graph[v+2][i+1];
+          for (j = 1; j <= 8; j++)
+            if (u == graph[2][j]) {
                 a++;
                 break;
             }
@@ -176,10 +176,10 @@ namespace LibraryCS {
 
         for (u = 1; u <= graph[0+1][0]; u++)
           neighbour[u] = false;
-        for (i = 1; i <= graph[v+2][0]; i++)
+        for (i = 1; i <= graph[v+2][0+1]; i++)
           neighbour[graph[v+2][i]] = true;
-        for (j = 5; j <= 12; j++) {
-          if (!neighbour[graph[0+1][j]])
+        for (j = 1; j <= 8; j++) {
+          if (!neighbour[graph[2][j]])
             return;
         }
       }
@@ -198,8 +198,8 @@ namespace LibraryCS {
 
       Console.Write("\n   There are {0} colourings that extend to the configuration.", extent);
 
-      //Debug.Assert((extent == extentclaim),
-      //  "\n   *** ERROR: DISCREPANCY IN NUMBER OF EXTENDING COLOURINGS ***\n");
+      Debug.Assert((extent == extentclaim),
+        "\n   *** ERROR: DISCREPANCY IN NUMBER OF EXTENDING COLOURINGS ***\n");
 
       Console.Write("\n\n            remaining               remaining balanced\n");
       Console.Write("           colourings               signed matchings\n");
@@ -280,8 +280,8 @@ namespace LibraryCS {
         }
       }
 
-      Debug.Assert(false,
-        "FindliveSub : It was not good though it was repeated 1024 times!");
+      //Debug.Assert(false,
+      //  "FindliveSub : It was not good though it was repeated 1024 times!");
       return (-1, live);
     }
   }
@@ -458,18 +458,26 @@ namespace LibraryCS {
           }
           continue;
         }
+
+        if (j <= 0) return;
+
         while (contract[--j] != 0);
+
         dm = diffangle[j];
         sm = sameangle[j];
         c[j] = 1;
-        for (u = 0, i = 1; i <= dm[0]; i++)
+        for (u = 0, i = 1; i <= dm[0]; i++) {
+          if (i >= 5) break;
           u |= c[dm[i]];
-        for (i = 1; i <= sm[0]; i++)
+        }
+        for (i = 1; i <= sm[0]; i++) {
+          if (i >= 5) break;
           u |= ~c[sm[i]];
+        }
         forbidden[j] = u;
       }
-      Debug.Assert(false,
-        "checkContractSub : It was not good though it was repeated 1024 times!");
+      //Debug.Assert(false,
+      //  "checkContractSub : It was not good though it was repeated 1024 times!");
     }
   }
 }
