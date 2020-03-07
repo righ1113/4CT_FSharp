@@ -59,8 +59,9 @@ module Re =
           else
             let u       = if v > 1    then v - 1 else ring
             let w       = if v < ring then v + 1 else 1
-            let doneInt = if done0.[u] || done0.[w] then 1 else 0
-            let inter   = 3 * graph.[v+2].[0+1] + 4 * doneInt
+            let doneIntU = if done0.[u] then 1 else 0
+            let doneIntW = if done0.[w] then 1 else 0
+            let inter   = 3 * graph.[v+2].[0+1] + 4 * (doneIntU + doneIntW)
             if inter > maxint then
               maxint <- inter
               best   <- v
@@ -86,7 +87,13 @@ module Re =
     edgeno : TpEdgeno // return
 
   // 2. findangles()
-  let findangles (graph : int array array) (edgeno : int array array) =
+  let findangles
+        (graph     : int array array)
+        (angle     : TpAngle)
+        (diffangle : TpAngle)
+        (sameangle : TpAngle)
+        (edgeno    : int array array) =
+
     let edge      = 3 * graph.[0+1].[0] - 3 - graph.[0+1].[1]
 
     let contract  = Array.replicate (EDGES + 1) 0
@@ -99,9 +106,10 @@ module Re =
         "         ***  ERROR: CONTRACT CONTAINS NON-EDGE  ***\n\n")
       contract.[edgeno.[u].[v]] <- 1
 
-    let angle     = Array.init EDGES (fun _ -> Array.zeroCreate 5)
-    let diffangle = Array.init EDGES (fun _ -> Array.zeroCreate 5)
-    let sameangle = Array.init EDGES (fun _ -> Array.zeroCreate 5)
+    for i in 0..(EDGES-1) do
+      angle.[i].[0]     <- 0
+      diffangle.[i].[0] <- 0
+      sameangle.[i].[0] <- 0
     diffangle.[0].[0] <- graph.[0+1].[0]
     diffangle.[0].[1] <- graph.[0+1].[1]
     diffangle.[0].[2] <- edge
@@ -326,6 +334,9 @@ module Re =
     printfn "start Reduce.fs"
 
     let graphs = LibFS.readFileGoodConfsR
+    let mutable angle     = Array.init EDGES (fun _ -> Array.zeroCreate 5)
+    let mutable diffangle = Array.init EDGES (fun _ -> Array.zeroCreate 5)
+    let mutable sameangle = Array.init EDGES (fun _ -> Array.zeroCreate 5)
 
     let mutable i = 0
     //for graph in Array.take 3 (Array.skip 302 graphs) do
@@ -343,7 +354,10 @@ module Re =
           others will not be used unless a contract is specified, and if so
           they will be used in "checkcontract" below to verify that the
           contract is correct. *)
-      let (angle, diffangle, sameangle, contract) = findangles graph edgeno
+      let (angle2, diffangle2, sameangle2, contract) = findangles graph angle diffangle sameangle edgeno
+      angle     <- angle2
+      diffangle <- diffangle2
+      sameangle <- sameangle2
 
       // 3. findlive()
       let ring   = graph.[0+1].[1] // ring-size
