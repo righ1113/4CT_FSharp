@@ -242,7 +242,7 @@ namespace LibraryCS {
     {
       int x, extent=0, u, i;
 
-      for (x = 0; x < 1024; x++) {
+      for (x = 0; x < 2048; x++) {
 
         while ((forbidden[j] & c[j]) != 0) {
           c[j] <<= 1;
@@ -280,8 +280,8 @@ namespace LibraryCS {
         }
       }
 
-      //Debug.Assert(false,
-      //  "FindliveSub : It was not good though it was repeated 1024 times!");
+      Debug.Assert(false,
+        "FindliveSub : It was not good though it was repeated 2048 times!");
       return (-1, live);
     }
   }
