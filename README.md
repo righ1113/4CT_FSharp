@@ -1,7 +1,7 @@
 ![4ctImg01](https://user-images.githubusercontent.com/34955220/71302741-526aa500-23f2-11ea-90c4-6ad7a5faf1ea.jpg)  
 
 # 4CT_FSharp
-四色定理をF#に移植したよ（予定）
+四色定理をF#に移植したよ  
 
 # 変更履歴
 20/03/09　Reduce 二周目終了  
