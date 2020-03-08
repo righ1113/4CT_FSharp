@@ -203,7 +203,7 @@ namespace LibraryCS {
 
       Console.Write("\n\n            remaining               remaining balanced\n");
       Console.Write("           colourings               signed matchings\n");
-      Console.Write("\n              {0}", totalcols - extent);
+      Console.Write("\n             {0,4:d}", totalcols - extent);
     }
     public static int Record(
       int[] col, int[] power, int ring, int[][] angle, int[] live, int extent, int bigno)
@@ -476,8 +476,8 @@ namespace LibraryCS {
         }
         forbidden[j] = u;
       }
-      //Debug.Assert(false,
-      //  "checkContractSub : It was not good though it was repeated 1024 times!");
+      Debug.Assert(false,
+        "checkContractSub : It was not good though it was repeated 1024 times!");
     }
   }
 }

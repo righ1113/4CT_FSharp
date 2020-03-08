@@ -249,7 +249,7 @@ module Re =
         interval.[2 * n - 1] <- b + 1
         interval.[2 * n]     <- ring - 1
       augment n interval 1 weight matchweight live real &nreal ring ((POWER.[ring + 1] - 1) / 2) 1 &bit &realterm nchar
-    printfn "                   %d" nreal //right
+    printfn "                       %d" nreal //right
 
     ()
 
@@ -272,7 +272,7 @@ module Re =
         live.[i] <- 1
 
     p <- newnlive
-    printf "                %d" newnlive
+    printf "             %4d" newnlive
 
     if (newnlive < nlive) && (newnlive > 0) then
       true
@@ -298,12 +298,10 @@ module Re =
   // checks that no colouring in live is the restriction to E(R) of a
   // tri-coloring of the free extension modulo the specified contract
   let checkContract ring bigno live2 nlive2 (diffangle : int array array) (sameangle : int array array) (contract : int array) =
-    //Debug.Assert(((nlive2 <> 0) || (contract.[0] <> 0)),
-    //  "         ***  ERROR: CONTRACT PROPOSED  ***\n\n")
-    //Debug.Assert((contract.[0] <> 0),
-    //  "       ***  ERROR: NO CONTRACT PROPOSED  ***\n\n")
-    //Debug.Assert((nlive2 = contract.[EDGES]),
-    //  "       ***  ERROR: DISCREPANCY IN EXTERIOR SIZE  ***\n\n")
+    Debug.Assert((contract.[0] <> 0),
+      "       ***  ERROR: NO CONTRACT PROPOSED  ***\n\n")
+    Debug.Assert((nlive2 = contract.[EDGES]),
+      "       ***  ERROR: DISCREPANCY IN EXTERIOR SIZE  ***\n\n")
 
     let mutable start = diffangle.[0].[2]
     let c = Array.replicate EDGES 0
@@ -376,7 +374,14 @@ module Re =
       // 5. checkContract()
       (* This verifies that the set claimed to be a contract for the
          configuration really is. *)
-      checkContract ring bigno live2 nlive2 diffangle sameangle contract
+      if nlive2 = 0 then
+        if contract.[0] = 0 then
+          ()  // D可約のときは抜ける
+        else
+          Debug.Assert(false,
+            "         ***  ERROR: CONTRACT PROPOSED  ***\n\n")
+      else
+        checkContract ring bigno live2 nlive2 diffangle sameangle contract
 
     true
 
