@@ -57,11 +57,11 @@ module Re =
           if done0.[v] then
             loop4 (v + 1)
           else
-            let u       = if v > 1    then v - 1 else ring
-            let w       = if v < ring then v + 1 else 1
+            let u        = if v > 1    then v - 1 else ring
+            let w        = if v < ring then v + 1 else 1
             let doneIntU = if done0.[u] then 1 else 0
             let doneIntW = if done0.[w] then 1 else 0
-            let inter   = 3 * graph.[v+2].[0+1] + 4 * (doneIntU + doneIntW)
+            let inter    = 3 * graph.[v+2].[0+1] + 4 * (doneIntU + doneIntW)
             if inter > maxint then
               maxint <- inter
               best   <- v
@@ -158,7 +158,7 @@ module Re =
             ring
             basecol
             on
-            (pbit : byref<int>)
+            (pbit : byref<sbyte>)
             (prealterm : byref<int>)
             nchar =
     (* Finds all matchings such that every match is from one of the given
@@ -192,7 +192,7 @@ module Re =
             h2 <- h2 + 1
             newinterval.[h2] <- i - 1
             h2 <- h2 + 1
-          augment newn newinterval depth weight matchweight live real &pnreal ring basecol on &pbit &prealterm nchar
+          augment newn newinterval depth1 weight matchweight live real &pnreal ring basecol on &pbit &prealterm nchar
     ()
   let testmatch ring real live nchar =
     (* This generates all balanced signed matchings, and for each one, tests
@@ -203,7 +203,7 @@ module Re =
     (* "nreal" will be the number of balanced signed matchings such that all
     * associated colourings belong to "live"; ie the total number of nonzero
     * bits in the entries of "real" *)
-    let mutable bit = 1
+    let mutable bit = 1y
     let mutable realterm = 0
     // First, it generates the matchings not incident with the last ring edge
 
@@ -249,7 +249,7 @@ module Re =
         interval.[2 * n - 1] <- b + 1
         interval.[2 * n]     <- ring - 1
       augment n interval 1 weight matchweight live real &nreal ring ((POWER.[ring + 1] - 1) / 2) 1 &bit &realterm nchar
-    printfn "               %d" nreal
+    printfn "                   %d" nreal //right
 
     ()
 
@@ -272,7 +272,7 @@ module Re =
         live.[i] <- 1
 
     p <- newnlive
-    printfn "            %d" newnlive
+    printf "                %d" newnlive
 
     if (newnlive < nlive) && (newnlive > 0) then
       true
