@@ -128,22 +128,26 @@ namespace LibraryCS {
           if (a > c) {
             d = (angle[c][0] >= 4) ? 4 : ++angle[c][0];
             angle[c][d] = a;
-            if ((contract[a] != 0) && (contract[b] != 0) && (contract[c] != 0))
+            if ((contract[a] == 0) && (contract[b] == 0) && (contract[c] == 0)) {
               e = (diffangle[c][0] >= 4) ? 4 : ++diffangle[c][0];
               diffangle[c][e] = a;
-            if (contract[b] != 0)
+            }
+            if (contract[b] != 0) {
               e = (sameangle[c][0] >= 4) ? 4 : ++sameangle[c][0];
               sameangle[c][e] = a;
+            }
           }
           if (b > c) {
             d = (angle[c][0] >= 4) ? 4 : ++angle[c][0];
             angle[c][d] = b;
-            if ((contract[a] != 0) && (contract[b] != 0) && (contract[c] != 0))
+            if ((contract[a] == 0) && (contract[b] == 0) && (contract[c] == 0)) {
               e = (diffangle[c][0] >= 4) ? 4 : ++diffangle[c][0];
               diffangle[c][e] = b;
-            if (contract[a] != 0)
+            }
+            if (contract[a] != 0) {
               e = (sameangle[c][0] >= 4) ? 4 : ++sameangle[c][0];
               sameangle[c][e] = b;
+            }
           }
         }
       }
@@ -242,7 +246,7 @@ namespace LibraryCS {
     {
       int x, extent=0, u, i;
 
-      for (x = 0; x < 2048; x++) {
+      for (x = 0; x < 8192; x++) {
 
         while ((forbidden[j] & c[j]) != 0) {
           c[j] <<= 1;
@@ -281,7 +285,7 @@ namespace LibraryCS {
       }
 
       Debug.Assert(false,
-        "FindliveSub : It was not good though it was repeated 2048 times!");
+        "FindliveSub : It was not good though it was repeated 8192 times!");
       return (-1, live);
     }
   }
@@ -414,12 +418,12 @@ namespace LibraryCS {
       for (i = 1; i <= 2; i++) {
           w = weight[i];
           if (w < min)
-      min = w;
+            min = w;
           else if (w > max)
-      max = w;
+            max = w;
       }
       colno = bigno - 2 * min - max;
-      if (live[colno] == 0){
+      if (live[colno] == 0) {
         return true;
       } else {
         return false;
@@ -432,7 +436,7 @@ namespace LibraryCS {
       int[] dm = new int[5];
       int[] sm = new int[5];
 
-      for (x = 0; x < 1024; x++) {
+      for (x = 0; x < 4096; x++) {
         while ((forbidden[j] & c[j]) != 0) {
           c[j] <<= 1;
           while ((c[j] & 8) != 0) {
@@ -477,7 +481,7 @@ namespace LibraryCS {
         forbidden[j] = u;
       }
       Debug.Assert(false,
-        "checkContractSub : It was not good though it was repeated 1024 times!");
+        "checkContractSub : It was not good though it was repeated 4096 times!");
     }
   }
 }

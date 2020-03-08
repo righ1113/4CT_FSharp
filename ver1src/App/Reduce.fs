@@ -40,11 +40,6 @@ module Re =
     term <- LibReduceStrip.StripSub2 (MVERTS, graph, verts, ring, edgeno, done0, term)
     // This eventually lists all the internal edges of the configuration
 
-    (* let r4 = setl (_2 << _1) 42 ("hello", ("world", "!!!"))
-    printfn "%A" r4
-    let r6 = setl (items) 100 [0..4]
-    printfn "%A" r6 *)
-
     // stripSub3
     // Now we must list the edges between the interior and the ring
     let mutable maxint = 0
@@ -92,7 +87,7 @@ module Re =
         (angle     : TpAngle)
         (diffangle : TpAngle)
         (sameangle : TpAngle)
-        (edgeno    : int array array) =
+        (edgeno    : TpEdgeno) =
 
     let edge      = 3 * graph.[0+1].[0] - 3 - graph.[0+1].[1]
 
@@ -130,7 +125,7 @@ module Re =
   (* computes {\cal C}_0 and stores it in live. That is, computes codes of
      colorings of the ring that are not restrictions of tri-colorings of the
      free extension. Returns the number of such codes *)
-  let findlive ring bigno live0 ncodes (angle : int array array) extentclaim =
+  let findlive ring bigno live0 ncodes (angle : TpAngle) extentclaim =
     //let ring      = angle.[0].[1] // ring-size
     let ed        = angle.[0].[2]
     let c         = Array.replicate EDGES 0
@@ -297,7 +292,7 @@ module Re =
   // 5. checkContract()
   // checks that no colouring in live is the restriction to E(R) of a
   // tri-coloring of the free extension modulo the specified contract
-  let checkContract ring bigno live2 nlive2 (diffangle : int array array) (sameangle : int array array) (contract : int array) =
+  let checkContract ring bigno live2 nlive2 (diffangle : TpAngle) (sameangle : TpAngle) (contract : int array) =
     Debug.Assert((contract.[0] <> 0),
       "       ***  ERROR: NO CONTRACT PROPOSED  ***\n\n")
     Debug.Assert((nlive2 = contract.[EDGES]),
@@ -309,7 +304,7 @@ module Re =
     while contract.[start] <> 0 do
       start <- start - 1
     c.[start] <- 1
-    let mutable j = start
+    let mutable j = start - 1
     while contract.[j] <> 0 do
       j <- j - 1
     let dm = diffangle.[j]
@@ -337,8 +332,7 @@ module Re =
     let mutable sameangle = Array.init EDGES (fun _ -> Array.zeroCreate 5)
 
     let mutable i = 0
-    //for graph in Array.take 3 (Array.skip 302 graphs) do
-    for graph in Array.take 5 (graphs) do
+    for graph in Array.take 11 (graphs) do
       printfn "%d" i
       i <- i + 1
 
@@ -376,7 +370,7 @@ module Re =
          configuration really is. *)
       if nlive2 = 0 then
         if contract.[0] = 0 then
-          ()  // D可約のときは抜ける
+          ()  // D可約のときは、checkContract()へ行かない
         else
           Debug.Assert(false,
             "         ***  ERROR: CONTRACT PROPOSED  ***\n\n")
