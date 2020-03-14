@@ -194,6 +194,81 @@ namespace LibraryCS2 {
 
   public class LibDischargeReduce {
     public const int MAXASTACK   = 5;              // max height of Astack (see "Reduce")
+    public const int CARTVERT    = 5 * 12 + 2;     // domain of l_A, u_A, where A is an axle
+
+    /*********************************************************************
+      Getadjmat
+    Computes adjmat defined as follows. Let G=G(L), where L is the
+    skeleton of A. Notice that G only depends on u_B(i) for i=0,1,..,deg.
+    Then adjmat[u][v]=w if u,v,w form a clockwise triangle in G, and
+    adjmat[u][v]=-1 if w does not exist.
+    *********************************************************************/
+    public static void Getadjmat(LibFS.TpAxle aa, LibFS.TpAdjmat adjmat)
+    {
+      int deg, a, b, h, i;
+
+      deg = aa.low[aa.lev][0];
+      for (a = 0; a < CARTVERT; a++)
+        for (b = 0; b < CARTVERT; b++)
+          adjmat.adj[a][b] = -1;
+      for (i = 1; i <= deg; i++) {
+        h = (i == 1) ? deg : i - 1;
+        adjmat.adj[0][h] = i;
+        adjmat.adj[i][0] = h;
+        adjmat.adj[h][i] = 0;
+        a = deg + h;
+        adjmat.adj[i][h] = a;
+        adjmat.adj[a][i] = h;
+        adjmat.adj[h][a] = i;
+        if (aa.upp[aa.lev][i] < 9)
+          DoFan(deg, i, aa.upp[aa.lev][i], adjmat);
+      }
+    }/* Getadjmat */
+
+    /*********************************************************************
+      DoFan
+    Does one fan of adjmat
+    *********************************************************************/
+    public static void DoFan(int deg, int i, int k, LibFS.TpAdjmat adjmat)
+    {
+      int a, b, c, d, e;
+
+      a = i == 1 ? 2 * deg : deg + i - 1;
+      b = deg + i;
+      if (k == 5) {
+        adjmat.adj[i][a] = b;
+        adjmat.adj[a][b] = i;
+        adjmat.adj[b][i] = a;
+        return;
+      }
+      c = 2 * deg + i;
+      adjmat.adj[i][a] = c;
+      adjmat.adj[a][c] = i;
+      adjmat.adj[c][i] = a;
+      if (k == 6) {
+        adjmat.adj[i][c] = b;
+        adjmat.adj[c][b] = i;
+        adjmat.adj[b][i] = c;
+        return;
+      }
+      d = 3 * deg + i;
+      adjmat.adj[i][c] = d;
+      adjmat.adj[c][d] = i;
+      adjmat.adj[d][i] = c;
+      if (k == 7) {
+        adjmat.adj[i][d] = b;
+        adjmat.adj[d][b] = i;
+        adjmat.adj[b][i] = d;
+        return;
+      }
+      e = 4 * deg + i;
+      adjmat.adj[i][d] = e;
+      adjmat.adj[d][e] = i;
+      adjmat.adj[e][i] = d;
+      adjmat.adj[i][e] = b;
+      adjmat.adj[e][b] = i;
+      adjmat.adj[b][i] = e;
+    }/* DoFan */
 
     public static LibFS.TpReduceRet Reduce(
       ref LibFS.TpReducePack1 rP1, ref LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
@@ -219,7 +294,7 @@ namespace LibraryCS2 {
         //CopyAxle(B, Astack[--naxles]);
         Console.Write("Axle from stack:");
         //PrintAxle(B);
-        //Getadjmat(B, adjmat);
+        Getadjmat(axles, rP1.adjmat);
         //GetEdgelist(B, edgelist);
         for (h = 0; h < noconf; ++h)
           //if (SubConf(adjmat, B->upp, redquestions[h], edgelist, image))
