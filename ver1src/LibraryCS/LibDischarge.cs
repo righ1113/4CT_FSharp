@@ -203,11 +203,11 @@ namespace LibraryCS2 {
     Then adjmat[u][v]=w if u,v,w form a clockwise triangle in G, and
     adjmat[u][v]=-1 if w does not exist.
     *********************************************************************/
-    public static void Getadjmat(LibFS.TpAxle aa, LibFS.TpAdjmat adjmat)
+    public static void Getadjmat(int naxles, LibFS.TpAxle aa, LibFS.TpAdjmat adjmat)
     {
       int deg, a, b, h, i;
 
-      deg = aa.low[aa.lev][0];
+      deg = aa.low[naxles][0];
       for (a = 0; a < CARTVERT; a++)
         for (b = 0; b < CARTVERT; b++)
           adjmat.adj[a][b] = -1;
@@ -220,8 +220,8 @@ namespace LibraryCS2 {
         adjmat.adj[i][h] = a;
         adjmat.adj[a][i] = h;
         adjmat.adj[h][a] = i;
-        if (aa.upp[aa.lev][i] < 9)
-          DoFan(deg, i, aa.upp[aa.lev][i], adjmat);
+        if (aa.upp[naxles][i] < 9)
+          DoFan(deg, i, aa.upp[naxles][i], adjmat);
       }
     }/* Getadjmat */
 
@@ -273,6 +273,16 @@ namespace LibraryCS2 {
     public static LibFS.TpReduceRet Reduce(
       ref LibFS.TpReducePack1 rP1, ref LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
     {
+      rP1.axle.low[0] = axles.low[axles.lev];
+      rP1.axle.upp[0] = axles.upp[axles.lev];
+      LibFS.TpAxle        aStackAxle = new LibFS.TpAxle(rP1.axle.low, rP1.axle.upp, rP1.axle.lev);
+      LibFS.TpReducePack1 aStack     = new LibFS.TpReducePack1(aStackAxle, rP1.bLow, rP1.bUpp, rP1.adjmat);
+      return ReduceSub(ref aStack, ref rP2);
+    }
+
+    public static LibFS.TpReduceRet ReduceSub(
+      ref LibFS.TpReducePack1 aStack, ref LibFS.TpReducePack2 rP2)
+    {
       int h, i, j, v, redring, redverts;
       int naxles, noconf;
       /*static tp_confmat *conf;
@@ -282,25 +292,21 @@ namespace LibraryCS2 {
       static tp_axle **Astack, *B;
       static tp_question *redquestions;*/
 
-      LibFS.TpReduceRet retT = new LibFS.TpReduceRet(true,  rP1.axle, rP2.used, rP2.image);
-      LibFS.TpReduceRet retF = new LibFS.TpReduceRet(false, rP1.axle, rP2.used, rP2.image);
-
       /* This part is executed when A!=NULL */
       Console.Write("Testing reducibility. Putting input axle on stack.\n");
-      //CopyAxle(Astack[0], A);
 
       noconf = 0; //633;
       for (naxles = 1; naxles > 0 && naxles < MAXASTACK;) {
-        //CopyAxle(B, Astack[--naxles]);
+        --naxles; //CopyAxle(B, Astack[--naxles]);
         Console.Write("Axle from stack:");
-        //PrintAxle(B);
-        Getadjmat(axles, rP1.adjmat);
+        Getadjmat(naxles, aStack.axle, aStack.adjmat);
         //GetEdgelist(B, edgelist);
         for (h = 0; h < noconf; ++h)
           //if (SubConf(adjmat, B->upp, redquestions[h], edgelist, image))
           //  break;
         if (h == noconf) {
           Console.Write("Not reducible\n");
+          LibFS.TpReduceRet retF = new LibFS.TpReduceRet(false, aStack.axle, rP2.used, rP2.image);
           return retF;
         }
         /* Semi-reducibility test found h-th configuration, say K, appearing */
@@ -321,22 +327,23 @@ namespace LibraryCS2 {
 
         for (i = redring + 1; i <= redverts; i++) {
           v = rP2.image.ver[i];
-          //if (B->low[v] == B->upp[v])
-          //  continue;
+          if (aStack.axle.low[naxles][v] == aStack.axle.upp[naxles][v])
+            continue;
           Console.Write("Lowering upper bound of vertex ");
-          //Console.Write("{0} to {1} and adding to stack\n", v, B->upp[v] - 1);
+          Console.Write("{0} to {1} and adding to stack\n", v, aStack.axle.upp[naxles][v] - 1);
 
           Debug.Assert((naxles < MAXASTACK),
             "More than %d elements in axle stack needed\n");
 
           //CopyAxle(Astack[naxles], B);
-          //Astack[naxles]->upp[v] = B->upp[v] - 1;
+          aStack.axle.upp[naxles][v]--;
           naxles++;
         }
 
       }//naxles
 
       Console.Write("All possibilities for lower degrees tested\n");
+      LibFS.TpReduceRet retT = new LibFS.TpReduceRet(true,  aStack.axle, rP2.used, rP2.image);
       return retT;
 
     }
