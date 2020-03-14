@@ -2,7 +2,7 @@ namespace Discharge
 
 open System
 open System.Diagnostics
-open FSharpPlus.Lens
+//open FSharpPlus.Lens
 open LibraryFS
 open LibraryCS2
 
@@ -18,19 +18,6 @@ module Di =
   let MAXSTACK   = 5              // max height of Astack (see "Reduce")
   let MAXLEV     = 12             // max level of an input line + 1
   let DIFNOUTS   = [0; 0; 0; 0; 0; 0; 0; 103; 103; 103; 103; 103]
-
-  //type TpAxle        = int array array * int array array * int
-  type TpAxleI       = int array * int array
-  type TpCond        = int array * int array
-  //type TpAdjmat      = int array array
-  //type TpVertices    = int array
-  //type TpQuestion    = int array * int array * int array * int array
-  //type TpEdgelist    = int array array array
-  //type TpPosout      = int array * int array * int array * int array array * int array array * int array array * int array
-  type TpPosoutI     = int * int * int * int array * int array * int array * int
-  //type TpReducePack1 = TpAxle * int array * int array * TpAdjmat
-  //type TpReducePack2 = TpEdgelist * bool array * TpVertices * TpQuestion array
-  type TpConfPack    = bool * int * bool array * LibFS.TpVertices * int
 
 
   // 1.Symmetry
@@ -113,7 +100,6 @@ module Di =
     let covered = Array.replicate (MAXVAL + 2) 0
     let aux     = Array.replicate (MAXVAL + 2) 0
     let s = Array.replicate (2 * MAXOUTLETS + 1) 0
-    //int i, j, a, total, deg;
     let nouts = DIFNOUTS.[deg]
 
     // 1.
@@ -193,7 +179,7 @@ module Di =
     let mutable rrP1 = rP1 //{ rP1 with axle = ret.axle; }
     let mutable rrP2 = rP2 //{ rP2 with used = ret.used; image = ret.image; }
     for i in 2..x.[0] do
-      printfn "\n-->Checking hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]
+      ignore <| printfn "\n-->Checking hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]
       for j in 0..(nouts-1) do
         posout.xx.[j] <- x.[i]
         s.[j] <- 0
@@ -204,7 +190,7 @@ module Di =
         s.[2 * nouts - 1] <- 99 // to indicate end of list
       else
         s.[nouts - 1] <- 99 // to indicate end of list
-      LibDischargeHubcap.CheckBound(posout, s, v.[i], 0, 0, &rrP1, &rrP2, axles)
+      ignore <| LibDischargeHubcap.CheckBound(posout, s, v.[i], 0, 0, &rrP1, &rrP2, axles)
       //rrP1 <- { rrP1 with axle = ret.axle; }
       //rrP2 <- { rrP2 with used = ret.used; image = ret.image; }
     printfn ""
@@ -260,26 +246,27 @@ module Di =
                    nosym
                    (axles : LibFS.TpAxle)
                    tactics =
+    let nowTac = Array.head tactics
     match axles.lev with
       | lev when lev >= MAXLEV ->
           Debug.Assert(false, "More than %d levels")
           "error1"
       | lev when lev < 0       ->
           // 終了時
-          Array.head (Array.head tactics)
+          Array.head nowTac
       | _                      ->
-          match (Array.head tactics).[1] with
+          match nowTac.[1] with
             | "S" ->
-                printfn "Symmetry"
-                checkSymmetry (Array.tail (Array.tail (Array.head tactics))) axles posout nosym
+                printfn "Symmetry %A" nowTac
+                checkSymmetry (Array.tail (Array.tail nowTac)) axles posout nosym
                 //止めておくmainLoop rP1 rP2 posout (nn, mm) deg nosym (low, upp, lev - 1) (Array.tail tactics)
                 "Q.E.D"
             | "R" ->
-                printfn "Reduce"
+                printfn "Reduce %A" nowTac
                 let ret : LibFS.TpReduceRet = reduce &rP1 &rP2 axles
                 if ret.retB then
-                  mainLoop &rP1 //{ rP1 with axle = ret.axle; } //(setl _1 aStack' rP1)
-                           &rP2 //{ rP2 with used = ret.used; image = ret.image} //(setl _3 image' (setl _2 used' rP2))
+                  mainLoop &rP1
+                           &rP2
                            posout
                            (nn, mm)
                            deg
@@ -290,10 +277,10 @@ module Di =
                   Debug.Assert(false, "Reducibility failed")
                   "error3"
             | "H" ->
-                printfn "Hubcap"
-                let (posout', ret) = checkHubcap posout (Array.tail (Array.tail (Array.head tactics))) axles deg &rP1 &rP2
-                mainLoop &rP1 //{ rP1 with axle = ret.axle; }
-                         &rP2 //{ rP2 with used = ret.used; image = ret.image}
+                printfn "Hubcap %A" nowTac
+                let (posout', ret) = checkHubcap posout (Array.tail (Array.tail nowTac)) axles deg &rP1 &rP2
+                mainLoop &rP1
+                         &rP2
                          posout'
                          (nn, mm)
                          deg
@@ -301,16 +288,16 @@ module Di =
                          { axles with lev = axles.lev - 1; }
                          (Array.tail tactics)
             | "C" ->
-                printfn "Condition"
-                let n = int (Int32.Parse (Array.head tactics).[2])
-                let m = int (Int32.Parse (Array.head tactics).[3])
+                printfn "Condition %A" nowTac
+                let n = int (Int32.Parse nowTac.[2])
+                let m = int (Int32.Parse nowTac.[3])
                 let nosym2                   = checkCondition1 (nn, mm) deg axles n m nosym
                 let (cond2, (low2, upp2, _)) = checkCondition2 (nn, mm) axles n m
                 mainLoop &rP1 &rP2 posout cond2 deg nosym2 {low = low2; upp = upp2; lev = axles.lev + 1} (Array.tail tactics)
-                //"Q.E.D."
             | _   ->
                 Debug.Assert(false, "Invalid instruction")
                 "error2"
+
 
   let discharge =
     printfn "start Dischage.fs"
@@ -318,7 +305,7 @@ module Di =
     let deg = 7
 
     // TpAxle
-    let axles0 = Array.replicate MAXLEV (Array.replicate CARTVERT 0)
+    let axles0    = Array.init MAXLEV (fun _ -> Array.zeroCreate CARTVERT)
     let axlesLow0 = Array.take CARTVERT (Array.concat [| [|deg|]; (Array.replicate (5*deg) 5);     (Array.replicate 1000 0) |])
     let axlesUpp0 = Array.take CARTVERT (Array.concat [| [|deg|]; (Array.replicate (5*deg) INFTY); (Array.replicate 1000 0) |])
     let axlesLow  = Array.append [|axlesLow0|] axles0
@@ -329,19 +316,15 @@ module Di =
     let mm = Array.replicate MAXLEV 0
 
     // TpOutlet & TpPosout
-    //posoutStr    <- readFile $ "readFile/rules" ++ degStr ++ "HS.txt"
-    //let posout   = read posoutStr :: TpPosout // CheckHubcap(axles, NULL, 0, print); -- read rules, compute outlets
-    //let rules = ([|1|], [|1|], [|1|], [|[|1;0;0;0;0;0;0;0;0;0; 0;0;0;0;0;0;0|]|], [|[|5;0;0;0;0;0;0;0;0;0; 0;0;0;0;0;0;0|]|], [|[|5;12;0;0;0;0;0;0;0;0; 0;0;0;0;0;0;0|]|], [|0|])
     let rules = LibFS.readFileRulesD
-    //printfn "%d" rules.[1].[8].[3]
 
     // TpReducePack
-    let aSLow    = Array.replicate (MAXLEV + 1) (Array.replicate CARTVERT 0)
-    let aSUpp    = Array.replicate (MAXLEV + 1) (Array.replicate CARTVERT 0)
+    let aSLow    = Array.init (MAXLEV + 1) (fun _ -> Array.zeroCreate CARTVERT)
+    let aSUpp    = Array.init (MAXLEV + 1) (fun _ -> Array.zeroCreate CARTVERT)
     let bLow     = Array.replicate CARTVERT 0
     let bUpp     = Array.replicate CARTVERT 0
-    let adjmat   = Array.replicate CARTVERT (Array.replicate CARTVERT 0)
-    let edgelist = Array.replicate 12 (Array.replicate 9 (Array.replicate MAXELIST 0))
+    let adjmat   = Array.init CARTVERT (fun _ -> Array.zeroCreate CARTVERT)
+    let edgelist = Array.init 12 (fun _ -> Array.init 9 (fun _ -> Array.zeroCreate MAXELIST))
     let used     = Array.replicate CARTVERT false
     let image    = Array.replicate CARTVERT 0
     let qU       = Array.replicate VERTS 0
@@ -353,12 +336,10 @@ module Di =
     let mutable redpk1 : LibFS.TpReducePack1 = {axle = axlepk; bLow = bLow; bUpp = bUpp; adjmat = {adj = adjmat};}
     let mutable redpk2 : LibFS.TpReducePack2 = {edgelist = {edg = edgelist}; used = used; image = {ver = image}; redquestions = graphs}
 
-
-    //inStr <- readFile $ "readFile/present" ++ degStr
     let tactics = LibFS.readFileTacticsD
-    printfn "%s" tactics.[13].[2]
-    let ret = mainLoop &redpk1 //((aSLow, aSUpp, 0), bLow, bUpp, adjmat)
-                       &redpk2 //(edgelist, used, image, graphs)
+
+    let ret = mainLoop &redpk1
+                       &redpk2
                        rules
                        (nn, mm)
                        deg
