@@ -208,33 +208,32 @@ module Di =
     axles.upp.[axles.lev+1] <- axles.upp.[axles.lev]
     let aLowN = axles.low.[axles.lev].[n]
     let aUppN = axles.upp.[axles.lev].[n]
-    if m > 0
-      then // new lower bound
-        if aLowN >= m || m > aUppN
-          then
-            //Debug.Assert(false, "Invalid lower bound in condition")
-            ((nn, mm), (axles.low, axles.upp, axles.lev))
-          else
-            axles.upp.[axles.lev]    .[n] <- m - 1
-            axles.low.[axles.lev + 1].[n] <- m
-            nn.[axles.lev]     <- n
-            nn.[axles.lev + 1] <- 0
-            mm.[axles.lev]     <- m
-            mm.[axles.lev + 1] <- 0
-            ((nn, mm), (axles.low, axles.upp, axles.lev))
-      else // new upper bound
-        if aLowN > -m || -m >= aUppN
-          then
-            Debug.Assert(false, "Invalid upper bound in condition")
-            ((nn, mm), (axles.low, axles.upp, axles.lev))
-          else
-            axles.upp.[axles.lev]    .[n] <- 1 - m
-            axles.low.[axles.lev + 1].[n] <- -m
-            nn.[axles.lev]     <- n
-            nn.[axles.lev + 1] <- 0
-            mm.[axles.lev]     <- m
-            mm.[axles.lev + 1] <- 0
-            ((nn, mm), (axles.low, axles.upp, axles.lev))
+    if m > 0 then
+      // new lower bound
+      if aLowN >= m || m > aUppN then
+        //Debug.Assert(false, "Invalid lower bound in condition")
+        ((nn, mm), (axles.low, axles.upp, axles.lev))
+      else
+        axles.upp.[axles.lev]    .[n] <- m - 1
+        axles.low.[axles.lev + 1].[n] <- m
+        nn.[axles.lev]     <- n
+        nn.[axles.lev + 1] <- 0
+        mm.[axles.lev]     <- m
+        mm.[axles.lev + 1] <- 0
+        ((nn, mm), (axles.low, axles.upp, axles.lev))
+    else
+      // new upper bound
+      if aLowN > -m || -m >= aUppN then
+        Debug.Assert(false, "Invalid upper bound in condition")
+        ((nn, mm), (axles.low, axles.upp, axles.lev))
+      else
+        axles.low.[axles.lev]    .[n] <- 1 - m
+        axles.upp.[axles.lev + 1].[n] <- -m
+        nn.[axles.lev]     <- n
+        nn.[axles.lev + 1] <- 0
+        mm.[axles.lev]     <- m
+        mm.[axles.lev + 1] <- 0
+        ((nn, mm), (axles.low, axles.upp, axles.lev))
 
 
   // main routine
