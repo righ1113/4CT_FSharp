@@ -353,6 +353,73 @@ namespace LibraryCS2 {
       }
     }
 
+    /**********************************************************************
+      RootedSubConf
+    See "SubConf" below.
+    ***********************************************************************/
+    public static bool RootedSubConf(
+      int[] degree, LibFS.TpAdjmat adjmat, LibFS.TpQuestion question, LibFS.TpVertices image, bool[] used, int x, int y, int clockwise)
+    {
+      int deg, j, w;
+
+      deg = degree[0];
+      for (j = 0; j < CARTVERT; j++) {
+        used[j]      = false;
+        image.ver[j] = -1;
+      }
+      image.ver[0] = clockwise;
+      image.ver[question.qc[0]] = x;
+      image.ver[question.qc[1]] = y;
+      used[x] = true;
+      used[y] = false;
+      //for (Q = question + 2; Q->u >= 0; Q++) {
+      for (j = 2; question.qa[j] >= 0; j++) {
+        if (clockwise != 0)
+          w = adjmat.adj[image.ver[question.qa[j]]][image.ver[question.qb[j]]];
+        else
+          w = adjmat.adj[image.ver[question.qb[j]]][image.ver[question.qa[j]]];
+        if (w == -1)
+          return false;
+        if ((question.qd[j] != 0) && question.qd[j] != degree[w])
+          return false;
+        if (used[w])
+          return false;
+        image.ver[question.qc[j]] = w;
+        used[w] = true;
+      }
+
+      /* test if image is well-positioned */
+      for (j = 1; j <= deg; j++)
+        if (!used[j] && used[deg + j] && used[(j == 1) ? 2 * deg : deg + j - 1])
+          return false;
+
+      return true;
+    }/* RootedSubConf */
+
+    /**********************************************************************
+      SubConf
+    Given "adjmat", "degree" and "edgelist" derived from an axle A, and
+    "question" for a configuration L it tests using [D, theorem (6.3)]
+    if L is a well-positioned induced subconfiguration of the skeleton
+    of A. If not returns 0; otherwise returns 1, writes an isomorphism
+    into image, and sets image[0] to 1 if the isomorphism is orientation-
+    preserving, and 0 if it is orientation-reversing.
+    ***********************************************************************/
+    public static bool SubConf(
+      LibFS.TpAdjmat adjmat, int[] degree, LibFS.TpQuestion question, LibFS.TpEdgelist edgelist, LibFS.TpVertices image, bool[] used)
+    {
+      int i, x, y;
+
+      for (i = 1; i <= edgelist.edg[question.qd[0]][question.qd[1]][0]; i++) {
+        x = edgelist.edg[question.qd[0]][question.qd[1]][i++];
+        y = edgelist.edg[question.qd[0]][question.qd[1]][i];
+        if (RootedSubConf(degree, adjmat, question, image, used, x, y, 1) ||
+            RootedSubConf(degree, adjmat, question, image, used, x, y, 0))
+          return true;
+      }
+      return false;
+    }/* SubConf */
+
     public static LibFS.TpReduceRet Reduce(
       ref LibFS.TpReducePack1 rP1, ref LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
     {
@@ -368,28 +435,21 @@ namespace LibraryCS2 {
     {
       int h, i, j, v, redring, redverts;
       int naxles, noconf;
-      /*static tp_confmat *conf;
-      static tp_edgelist edgelist;
-      static tp_adjmat adjmat;
-      static tp_vertices image;
-      static tp_axle **Astack, *B;
-      static tp_question *redquestions;*/
 
-      /* This part is executed when A!=NULL */
       Console.Write("Testing reducibility. Putting input axle on stack.\n");
 
-      noconf = 0; //633;
+      noconf = 633;
       for (naxles = 1; naxles > 0 && naxles < MAXASTACK;) {
         --naxles; //CopyAxle(B, Astack[--naxles]);
         Console.Write("Axle from stack:");
         Getadjmat(naxles, aStack.axle, aStack.adjmat);
         GetEdgelist(naxles, aStack.axle, rP2.edgelist);
         for (h = 0; h < noconf; ++h)
-          //if (SubConf(adjmat, B->upp, redquestions[h], edgelist, image))
-          //  break;
+          if (SubConf(aStack.adjmat, aStack.axle.upp[naxles], rP2.redquestions[h], rP2.edgelist, rP2.image, rP2.used))
+            break;
         if (h == noconf) {
           Console.Write("Not reducible\n");
-          LibFS.TpReduceRet retF = new LibFS.TpReduceRet(false, aStack.axle, rP2.used, rP2.image);
+          LibFS.TpReduceRet retF = new LibFS.TpReduceRet(true, aStack.axle, rP2.used, rP2.image);
           return retF;
         }
         /* Semi-reducibility test found h-th configuration, say K, appearing */
