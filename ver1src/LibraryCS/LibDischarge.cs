@@ -193,8 +193,9 @@ namespace LibraryCS2 {
   }
 
   public class LibDischargeReduce {
-    public const int MAXASTACK   = 5;              // max height of Astack (see "Reduce")
     public const int CARTVERT    = 5 * 12 + 2;     // domain of l_A, u_A, where A is an axle
+    public const int MAXELIST    = 134;            // length of edgelist[a][b]
+    public const int MAXASTACK   = 5;              // max height of Astack (see "Reduce")
 
     /*********************************************************************
       Getadjmat
@@ -270,6 +271,88 @@ namespace LibraryCS2 {
       adjmat.adj[b][i] = e;
     }/* DoFan */
 
+    /**********************************************************************
+      GetEdgeList
+    For (a,b) such that a >= b, b <= 8 and a <= 11 computes X=edgelist[a][b]
+    defined as follows: X[2*i+1],X[2*i+2] (i=0,1,...,X[0]-1) are all pairs of
+    adjacent vertices u,v of the skeleton of A with degrees a,b, respectively
+    such that either a<=8 or u=0.
+    ***********************************************************************/
+    public static void GetEdgelist(
+      int naxles, LibFS.TpAxle aa, LibFS.TpEdgelist edgelist)
+    {
+      int a, b, c, d, e, h, i, deg;
+
+      deg = aa.low[naxles][0];
+      for (a = 5; a <= 11; a++)
+          for (b = 5; b <= 8 && b <= a; b++)
+      edgelist.edg[a][b][0] = 0;
+      for (i = 1; i <= deg; i++) {
+        AddToList(edgelist, 0, i, aa.upp[naxles]);
+        h = (i == 1) ? deg : i - 1;
+        AddToList(edgelist, i, h, aa.upp[naxles]);
+        a = deg + h;
+        b = deg + i;
+        AddToList(edgelist, i, a, aa.upp[naxles]);
+        AddToList(edgelist, i, b, aa.upp[naxles]);
+        if (aa.upp[naxles][i] != aa.upp[naxles][i])
+          continue;
+        /* in this case we are not interested in the fan edges */
+        if (aa.upp[naxles][i] == 5) {
+          AddToList(edgelist, a, b, aa.upp[naxles]);
+          continue;
+        }
+        c = 2 * deg + i;
+        AddToList(edgelist, a, c, aa.upp[naxles]);
+        AddToList(edgelist, i, c, aa.upp[naxles]);
+        if (aa.upp[naxles][i] == 6) {
+          AddToList(edgelist, b, c, aa.upp[naxles]);
+          continue;
+        }
+        d = 3 * deg + i;
+        AddToList(edgelist, c, d, aa.upp[naxles]);
+        AddToList(edgelist, i, d, aa.upp[naxles]);
+        if (aa.upp[naxles][i] == 7) {
+          AddToList(edgelist, b, d, aa.upp[naxles]);
+          continue;
+        }
+
+        //Debug.Assert((aa.upp[naxles][i] == 8),
+        //  "Unexpected error in `GetEdgeList'\n");
+
+        e = 4 * deg + i;
+        AddToList(edgelist, d, e, aa.upp[naxles]);
+        AddToList(edgelist, i, e, aa.upp[naxles]);
+        AddToList(edgelist, b, e, aa.upp[naxles]);
+      }
+    }/* GetEdgeList */
+
+    /**********************************************************************
+      AddToList
+    See "GetEdgeList" above.
+    ***********************************************************************/
+    public static void AddToList(
+      LibFS.TpEdgelist edgelist, int u, int v, int[] degree)
+    {
+      /* adds the pair u,v to edgelist */
+      int a, b;
+
+      a = degree[u];
+      b = degree[v];
+      if ((a >= b) && (b <= 8) && (a <= 11) && ((a <= 8) || (u == 0))) {
+        Debug.Assert((edgelist.edg[a][b][0] + 2 < MAXELIST),
+          "More than %d entries in edgelist needed\n");
+        edgelist.edg[a][b][++edgelist.edg[a][b][0]] = u;
+        edgelist.edg[a][b][++edgelist.edg[a][b][0]] = v;
+      }
+      if ((b >= a) && (a <= 8) && (b <= 11) && ((b <= 8) || (v == 0))) {
+        Debug.Assert((edgelist.edg[b][a][0] + 2 < MAXELIST),
+          "More than %d entries in edgelist needed\n");
+        edgelist.edg[b][a][++edgelist.edg[b][a][0]] = v;
+        edgelist.edg[b][a][++edgelist.edg[b][a][0]] = u;
+      }
+    }
+
     public static LibFS.TpReduceRet Reduce(
       ref LibFS.TpReducePack1 rP1, ref LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
     {
@@ -300,7 +383,7 @@ namespace LibraryCS2 {
         --naxles; //CopyAxle(B, Astack[--naxles]);
         Console.Write("Axle from stack:");
         Getadjmat(naxles, aStack.axle, aStack.adjmat);
-        //GetEdgelist(B, edgelist);
+        GetEdgelist(naxles, aStack.axle, rP2.edgelist);
         for (h = 0; h < noconf; ++h)
           //if (SubConf(adjmat, B->upp, redquestions[h], edgelist, image))
           //  break;
@@ -335,7 +418,6 @@ namespace LibraryCS2 {
           Debug.Assert((naxles < MAXASTACK),
             "More than %d elements in axle stack needed\n");
 
-          //CopyAxle(Astack[naxles], B);
           aStack.axle.upp[naxles][v]--;
           naxles++;
         }
