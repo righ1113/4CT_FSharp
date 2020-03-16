@@ -114,8 +114,8 @@ namespace LibraryCS2 {
       // 4. check reducibility
       if (forcedch > maxch) {
         ret = LibDischargeReduce.Reduce(ref rP1, ref rP2, axles);
-        Debug.Assert(ret.retB,
-          "Incorrect hubcap upper bound");
+        //Debug.Assert(ret.retB,
+        //  "Incorrect hubcap upper bound");
         Console.Write("{0} Reducible. Case done.\n", depth);
         LibFS.TpReduceRet ret3 = new LibFS.TpReduceRet(true, ret.axle, ret.used, ret.image);
         return ret3;
@@ -449,7 +449,7 @@ namespace LibraryCS2 {
             break;
         if (h == noconf) {
           Console.Write("Not reducible\n");
-          LibFS.TpReduceRet retF = new LibFS.TpReduceRet(true, aStack.axle, rP2.used, rP2.image);
+          LibFS.TpReduceRet retF = new LibFS.TpReduceRet(false, aStack.axle, rP2.used, rP2.image);
           return retF;
         }
         /* Semi-reducibility test found h-th configuration, say K, appearing */

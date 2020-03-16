@@ -204,14 +204,14 @@ module Di =
       | None    -> nosym
       | Some(_) -> nosym + 1
   let checkCondition2 (nn : int array, mm : int array) (axles : LibFS.TpAxle) n m =
-    axles.low.[axles.lev+1] <- axles.low.[axles.lev]
-    axles.upp.[axles.lev+1] <- axles.upp.[axles.lev]
+    axles.low.[axles.lev+1] <- Array.copy axles.low.[axles.lev]
+    axles.upp.[axles.lev+1] <- Array.copy axles.upp.[axles.lev]
     let aLowN = axles.low.[axles.lev].[n]
     let aUppN = axles.upp.[axles.lev].[n]
     if m > 0 then
       // new lower bound
       if aLowN >= m || m > aUppN then
-        //Debug.Assert(false, "Invalid lower bound in condition")
+        Debug.Assert(false, "Invalid lower bound in condition")
         ((nn, mm), (axles.low, axles.upp, axles.lev))
       else
         axles.upp.[axles.lev]    .[n] <- m - 1
@@ -305,8 +305,8 @@ module Di =
 
     // TpAxle
     let axles0    = Array.init MAXLEV (fun _ -> Array.zeroCreate CARTVERT)
-    let axlesLow0 = Array.take CARTVERT (Array.concat [| [|deg|]; (Array.replicate (5*deg) 5);     (Array.replicate 1000 0) |])
-    let axlesUpp0 = Array.take CARTVERT (Array.concat [| [|deg|]; (Array.replicate (5*deg) INFTY); (Array.replicate 1000 0) |])
+    let axlesLow0 = Array.take CARTVERT (Array.concat [| [|deg|]; (Array.create (5*deg) 5);     (Array.replicate 1000 0) |])
+    let axlesUpp0 = Array.take CARTVERT (Array.concat [| [|deg|]; (Array.create (5*deg) INFTY); (Array.replicate 1000 0) |])
     let axlesLow  = Array.append [|axlesLow0|] axles0
     let axlesUpp  = Array.append [|axlesUpp0|] axles0
 
