@@ -295,7 +295,7 @@ namespace LibraryCS2 {
         b = deg + i;
         AddToList(edgelist, i, a, aa.upp[naxles]);
         AddToList(edgelist, i, b, aa.upp[naxles]);
-        if (aa.upp[naxles][i] != aa.upp[naxles][i])
+        if (aa.low[naxles][i] != aa.upp[naxles][i])
           continue;
         /* in this case we are not interested in the fan edges */
         if (aa.upp[naxles][i] == 5) {
@@ -317,8 +317,8 @@ namespace LibraryCS2 {
           continue;
         }
 
-        //Debug.Assert((aa.upp[naxles][i] == 8),
-        //  "Unexpected error in `GetEdgeList'\n");
+        Debug.Assert((aa.upp[naxles][i] == 8),
+          "Unexpected error in `GetEdgeList'\n");
 
         e = 4 * deg + i;
         AddToList(edgelist, d, e, aa.upp[naxles]);
