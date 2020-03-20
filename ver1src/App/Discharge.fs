@@ -137,7 +137,8 @@ module Di =
           "Invalid double cover")
         covered.[x.[i]] <- -1
       else
-        if aux.[x.[i]] = v.[i] then total <- total + 1
+        aux.[x.[i]] <- v.[i]
+        total <- total + v.[i]
         Debug.Assert((covered.[x.[i]] <> -1 && covered.[y.[i]] <> -1),
           "Invalid double cover")
         covered.[x.[i]] <- if covered.[x.[i]] = 0 then y.[i] else -1
@@ -150,10 +151,11 @@ module Di =
           "Invalid hubcap")
         if covered.[i] = -1 then
           loop1 (i + 1)
-        //Debug.Assert((covered.[covered.[i]] = i),
-        //  "Invalid hubcap")
-        total <- total + aux.[i] // repeated hubcap members are only listed once
-        loop1 (i + 1)
+        else
+          Debug.Assert((covered.[covered.[i]] = i),
+            "Invalid hubcap")
+          total <- total + aux.[i] // repeated hubcap members are only listed once
+          loop1 (i + 1)
       else ()
     loop1 1
 
