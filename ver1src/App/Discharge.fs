@@ -81,7 +81,7 @@ module Di =
                   (deg    : int)
                   (rP1    : byref<LibFS.TpReducePack1>)
                   (rP2    : byref<LibFS.TpReducePack2>)
-                    : LibFS.TpPosout * LibFS.TpReduceRet =
+                    : LibFS.TpPosout =
 
     // 0.
     let xyv = (tac
@@ -129,12 +129,12 @@ module Di =
     // 2.
     let mutable total = 0
     for i in 1..x.[0] do
-      //Debug.Assert((x.[i] >= 1 && x.[i] <= deg && y.[i] >= 1 && y.[i] <= deg),
-      //  (sprintf "Invalid hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]))
+      Debug.Assert((x.[i] >= 1 && x.[i] <= deg && y.[i] >= 1 && y.[i] <= deg),
+        (sprintf "Invalid hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]))
       if x.[i] = y.[i] then
         total <- total + 2 * v.[i] // repeated hubcap members listed once
-        //Debug.Assert((covered.[x.[i]] = 0),
-        //  "Invalid double cover")
+        Debug.Assert((covered.[x.[i]] = 0),
+          "Invalid double cover")
         covered.[x.[i]] <- -1
       else
         if aux.[x.[i]] = v.[i] then total <- total + 1
@@ -146,8 +146,8 @@ module Di =
     // 3.
     let rec loop1 i =
       if i <= deg then
-        //Debug.Assert((covered.[i] <> 0),
-        //  "Invalid hubcap")
+        Debug.Assert((covered.[i] <> 0),
+          "Invalid hubcap")
         if covered.[i] = -1 then
           loop1 (i + 1)
         //Debug.Assert((covered.[covered.[i]] = i),
@@ -162,23 +162,8 @@ module Di =
     Debug.Assert((total <= 20 * (deg - 6) + 1),
       "Hubcap does not satisfy (H2)")
 
-    // 5. （二度書き）
-    let i = 1
-    printfn "\n-->Checking hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]
-    for j in 0..(nouts-1) do
-      posout.xx.[j] <- x.[i]
-      s.[j] <- 0
-    if x.[i] <> y.[i] then
-      for j in (nouts-1)..(2 * nouts - 1) do
-        posout.xx.[j] <- y.[i]
-        s.[j] <- 0
-      s.[2 * nouts - 1] <- 99 // to indicate end of list
-    else
-      s.[nouts - 1] <- 99 // to indicate end of list
-    let ret = LibDischargeHubcap.CheckBound(posout, s, v.[i], 0, 0, &rP1, &rP2, axles)
-    let mutable rrP1 = rP1 //{ rP1 with axle = ret.axle; }
-    let mutable rrP2 = rP2 //{ rP2 with used = ret.used; image = ret.image; }
-    for i in 2..x.[0] do
+    // 5.
+    for i in 1..x.[0] do
       ignore <| printfn "\n-->Checking hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]
       for j in 0..(nouts-1) do
         posout.xx.[j] <- x.[i]
@@ -190,11 +175,9 @@ module Di =
         s.[2 * nouts - 1] <- 99 // to indicate end of list
       else
         s.[nouts - 1] <- 99 // to indicate end of list
-      ignore <| LibDischargeHubcap.CheckBound(posout, s, v.[i], 0, 0, &rrP1, &rrP2, axles)
-      //rrP1 <- { rrP1 with axle = ret.axle; }
-      //rrP2 <- { rrP2 with used = ret.used; image = ret.image; }
+        ignore <| LibDischargeHubcap.CheckBound(posout, s, v.[i], 0, 0, &rP1, &rP2, axles)
     printfn ""
-    (posout, ret)
+    posout
 
 
   // 4.Condition
@@ -208,32 +191,27 @@ module Di =
     axles.upp.[axles.lev+1] <- Array.copy axles.upp.[axles.lev]
     let aLowN = axles.low.[axles.lev].[n]
     let aUppN = axles.upp.[axles.lev].[n]
+
     if m > 0 then
       // new lower bound
       if aLowN >= m || m > aUppN then
         Debug.Assert(false, "Invalid lower bound in condition")
-        ((nn, mm), (axles.low, axles.upp, axles.lev))
       else
         axles.upp.[axles.lev]    .[n] <- m - 1
         axles.low.[axles.lev + 1].[n] <- m
-        nn.[axles.lev]     <- n
-        nn.[axles.lev + 1] <- 0
-        mm.[axles.lev]     <- m
-        mm.[axles.lev + 1] <- 0
-        ((nn, mm), (axles.low, axles.upp, axles.lev))
     else
       // new upper bound
       if aLowN > -m || -m >= aUppN then
         Debug.Assert(false, "Invalid upper bound in condition")
-        ((nn, mm), (axles.low, axles.upp, axles.lev))
       else
         axles.low.[axles.lev]    .[n] <- 1 - m
         axles.upp.[axles.lev + 1].[n] <- -m
-        nn.[axles.lev]     <- n
-        nn.[axles.lev + 1] <- 0
-        mm.[axles.lev]     <- m
-        mm.[axles.lev + 1] <- 0
-        ((nn, mm), (axles.low, axles.upp, axles.lev))
+
+    nn.[axles.lev]     <- n
+    nn.[axles.lev + 1] <- 0
+    mm.[axles.lev]     <- m
+    mm.[axles.lev + 1] <- 0
+    ((nn, mm), (axles.low, axles.upp, axles.lev))
 
 
   // main routine
@@ -277,7 +255,7 @@ module Di =
                   "error3"
             | "H" ->
                 printfn "Hubcap %A" nowTac
-                let (posout', ret) = checkHubcap posout (Array.tail (Array.tail nowTac)) axles deg &rP1 &rP2
+                let posout' = checkHubcap posout (Array.tail (Array.tail nowTac)) axles deg &rP1 &rP2
                 mainLoop &rP1
                          &rP2
                          posout'
