@@ -22,11 +22,31 @@ namespace LibraryCS2 {
         p = posI[i];
         p = xxI + (p - 1) % deg < deg ? p + xxI : p + xxI - deg;
         if (p >= puppI.Length){ p = puppI.Length - 1; }
-        if (lowI[i] > lowI[p] || puppI[i] < puppI[p])
+        if (plowI[i] > lowI[p] || puppI[i] < uppI[p])
           return 0;
       }
       return valueI;
     }
+
+    /*********************************************************************
+                OutletPermitted
+    If (T,x) is permitted by A, then returns the value of T, otherwise 0
+    *********************************************************************/
+    public static int OutletPermitted(
+      int[] lowI, int[] uppI, int numberI, int nolinesI, int valueI, int[] posI, int[] plowI, int[] puppI, int xxI, int y)
+    {
+      int deg, i, p;
+
+      deg = lowI[0];
+      xxI--;
+      for (i = 0; i < nolinesI; ++i) {
+        p = posI[i];
+        p = xxI + (p - 1) % deg < deg ? p + xxI : p + xxI - deg;
+        if (lowI[i] > puppI[p] || puppI[i] < lowI[p])
+          return 0;
+      }	/* i */
+      return valueI;
+    }/* OutletPermitted */
 
     /************************************************************************
                 ReflForced
@@ -69,9 +89,9 @@ namespace LibraryCS2 {
     {
       int deg, i, x, good, forcedch, allowedch;
       int[] sprime = new int[2 * 110 + 1];
-      //tp_axle *AA;
-      //tp_posout *PO;
       int ii;
+      int p;
+      int retN;
       LibFS.TpReduceRet ret;
       LibFS.TpReduceRet ret2 = new LibFS.TpReduceRet(true, rP1.axle, rP2.used, rP2.image);
 
@@ -84,14 +104,35 @@ namespace LibraryCS2 {
           forcedch += posout.value[i];
         if (s[i] != 0)
           continue;
-        /*if (OutletForced(A, PO->T, PO->x)) {
+        retN = LibDischargeSymmetry.OutletForced(axles.low[axles.lev],
+                                                 axles.upp[axles.lev],
+                                                 posout.number[i],
+                                                 posout.nolines[i],
+                                                 posout.value[i],
+                                                 posout.pos[i],
+                                                 posout.plow[i],
+                                                 posout.pupp[i],
+                                                 posout.xx[i],
+                                                 posout.xx[i]);
+        if (retN != 0) {
           s[i] = 1;
-          forcedch += PO->T->value;
-        } else if (!OutletPermitted(A, PO->T, PO->x))
+          forcedch += posout.value[i];
+        }
+        else if (LibDischargeSymmetry.OutletPermitted(axles.low[axles.lev],
+                                                      axles.upp[axles.lev],
+                                                      posout.number[i],
+                                                      posout.nolines[i],
+                                                      posout.value[i],
+                                                      posout.pos[i],
+                                                      posout.plow[i],
+                                                      posout.pupp[i],
+                                                      posout.xx[i],
+                                                      posout.xx[i]) != 0) {
           s[i] = -1;
-        else if (PO->T->value > 0)
-          allowedch += PO->T->value;
-        */
+        }
+        else if (posout.value[i] > 0) {
+          allowedch += posout.value[i];
+        }
       }
 
       // 2.
@@ -123,27 +164,27 @@ namespace LibraryCS2 {
 
       // 5.
       //for (PO = posout + pos; s[pos] < 99; pos++, PO++) {
-      for (ii = pos; s[pos] < 99; ii++) {
+      for (ii = pos; s[ii] < 99; ii++) {
         if (s[pos] != 0 || posout.value[ii] < 0)
           continue;
         x = posout.xx[ii];
 
         // accepting positioned outlet PO, computing AA
-        /*CopyAxle(AA, A);
-        for (i = 0; i < PO->T->nolines; ++i) {
-          p = PO->T->pos[i];
+        LibFS.TpAxle axles2 = new LibFS.TpAxle(axles.low, axles.upp, axles.lev);
+        for (i = 0; i < posout.nolines[i]; ++i) {
+          p = posout.pos[ii][i];
           p = x - 1 + (p - 1) % deg < deg ? p + x - 1 : p + x - 1 - deg;
-          if (PO->T->low[i] > AA->low[p])
-            AA->low[p] = PO->T->low[i];
-          if (PO->T->upp[i] < AA->upp[p])
-            AA->upp[p] = PO->T->upp[i];
-          Debug.Assert((AA->low[p] <= AA->upp[p]),
+          if (posout.plow[ii][i] > posout.plow[ii][p])
+            axles2.low[axles2.lev][p] = posout.plow[ii][i];
+          if (posout.pupp[ii][i] < axles2.upp[axles2.lev][p])
+            axles2.low[axles2.lev][p] = posout.pupp[ii][i];
+          Debug.Assert((axles2.low[axles2.lev][p] <= axles2.upp[axles2.lev][p]),
             "Unexpected error 321");
-        }*/
+        }
 
         // Check if a previously rejected positioned outlet is forced to apply
         good = 1;
-        for (i = 0; i < pos; i++)
+        for (i = 0; i < pos; i++) {
           if (s[i] == -1
               && LibDischargeSymmetry.OutletForced(axles.low[axles.lev],
                                                    axles.upp[axles.lev],
@@ -160,6 +201,7 @@ namespace LibraryCS2 {
             good = 0;
             break;
           }
+        }
         if (good != 0) {
           // recursion with PO forced
           for (i = 0; (sprime[i] = s[i]) < 99; ++i)	// do nothing
@@ -167,8 +209,7 @@ namespace LibraryCS2 {
           sprime[pos] = 1;
           Console.Write("{0} Starting recursion with ", depth);
           Console.Write("{0},{1} forced\n", posout.number[ii], x);
-          //注意AA
-          //CheckBound(lowI, uppI, posout, sprime, maxch, pos + 1, depth + 1, rP1, rP2, axles);
+          CheckBound(posout, sprime, maxch, pos + 1, depth + 1, ref rP1, ref rP2, axles2);
         }
 
         // rejecting positioned outlet PO
@@ -185,8 +226,8 @@ namespace LibraryCS2 {
       }// pos
 
       // 6.
-      Debug.Assert(false,
-        "Unexpected error 101");
+      //Debug.Assert(false,
+      //  "Unexpected error 101");
       return ret2;
 
     }// CheckBound
