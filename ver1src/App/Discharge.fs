@@ -47,7 +47,7 @@ module Di =
                                            posout.pos.[i],
                                            posout.plow.[i],
                                            posout.pupp.[i],
-                                           posout.xx.[i],
+                                           k+1,
                                            k+1) = 1),
       "Invalid symmetry")
     (*Debug.Assert((LibDischargeSymmetry.ReflForced(low.[lev],
@@ -105,7 +105,6 @@ module Di =
     // 1.
     x.[0] <- xyv.Length
     printfn "Testing hubcap for:"
-    //PrintAxle(A);
     printfn "Forced positioned outlets:"
     for i in 1..deg do
       let mutable a = 0 // a=1 if edge number printed
@@ -118,12 +117,12 @@ module Di =
                                              posout.pos.[j],
                                              posout.plow.[j],
                                              posout.pupp.[j],
-                                             posout.xx.[j],
+                                             i,
                                              i) <> 0 then
           if a = 0 then
             printf "\nEdge %d: " i
             a <- 1
-          printfn "%d " posout.number.[j]
+          printf "%d " posout.number.[j]
     printfn ""
 
     // 2.

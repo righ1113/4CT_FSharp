@@ -42,7 +42,7 @@ namespace LibraryCS2 {
       for (i = 0; i < nolinesI; ++i) {
         p = posI[i];
         p = xxI + (p - 1) % deg < deg ? p + xxI : p + xxI - deg;
-        if (lowI[i] > puppI[p] || puppI[i] < lowI[p])
+        if (plowI[i] > uppI[p] || puppI[i] < lowI[p])
           return 0;
       }	/* i */
       return valueI;
@@ -72,7 +72,7 @@ namespace LibraryCS2 {
           q = 3 * deg - p;
         else
           q = 2 * deg;
-        if (lowI[i] > lowI[q] || puppI[i] < uppI[q])
+        if (plowI[i] > lowI[q] || puppI[i] < uppI[q])
           return 0;
       }
       return valueI;
@@ -89,7 +89,7 @@ namespace LibraryCS2 {
     {
       int deg, i, x, good, forcedch, allowedch;
       int[] sprime = new int[2 * 110 + 1];
-      int ii;
+      //int ii;
       int p;
       int retN;
       LibFS.TpReduceRet ret;
@@ -127,7 +127,7 @@ namespace LibraryCS2 {
                                                       posout.plow[i],
                                                       posout.pupp[i],
                                                       posout.xx[i],
-                                                      posout.xx[i]) != 0) {
+                                                      posout.xx[i]) == 0) {
           s[i] = -1;
         }
         else if (posout.value[i] > 0) {
@@ -164,20 +164,20 @@ namespace LibraryCS2 {
 
       // 5.
       //for (PO = posout + pos; s[pos] < 99; pos++, PO++) {
-      for (ii = pos; s[ii] < 99; ii++) {
-        if (s[pos] != 0 || posout.value[ii] < 0)
+      for (; s[pos] < 99; pos++) {
+        if (s[pos] != 0 || posout.value[pos] < 0)
           continue;
-        x = posout.xx[ii];
+        x = posout.xx[pos];
 
         // accepting positioned outlet PO, computing AA
         LibFS.TpAxle axles2 = new LibFS.TpAxle(axles.low, axles.upp, axles.lev);
         for (i = 0; i < posout.nolines[i]; ++i) {
-          p = posout.pos[ii][i];
+          p = posout.pos[pos][i];
           p = x - 1 + (p - 1) % deg < deg ? p + x - 1 : p + x - 1 - deg;
-          if (posout.plow[ii][i] > posout.plow[ii][p])
-            axles2.low[axles2.lev][p] = posout.plow[ii][i];
-          if (posout.pupp[ii][i] < axles2.upp[axles2.lev][p])
-            axles2.low[axles2.lev][p] = posout.pupp[ii][i];
+          if (posout.plow[pos][i] > posout.plow[pos][p])
+            axles2.low[axles2.lev][p] = posout.plow[pos][i];
+          if (posout.pupp[pos][i] < axles2.upp[axles2.lev][p])
+            axles2.low[axles2.lev][p] = posout.pupp[pos][i];
           Debug.Assert((axles2.low[axles2.lev][p] <= axles2.upp[axles2.lev][p]),
             "Unexpected error 321");
         }
@@ -197,7 +197,7 @@ namespace LibraryCS2 {
                                                    posout.xx[i],
                                                    posout.xx[i]) != 0) {
             Console.Write("{0} Positioned outlet ", depth);
-            Console.Write("{0},{1} can't be forced, because it forces {2},{3}\n", posout.number[ii], x, posout.number[i], posout.xx[i]);
+            Console.Write("{0},{1} can't be forced, because it forces {2},{3}\n", posout.number[pos], x, posout.number[i], posout.xx[i]);
             good = 0;
             break;
           }
@@ -208,15 +208,15 @@ namespace LibraryCS2 {
             ;
           sprime[pos] = 1;
           Console.Write("{0} Starting recursion with ", depth);
-          Console.Write("{0},{1} forced\n", posout.number[ii], x);
+          Console.Write("{0},{1} forced\n", posout.number[pos], x);
           CheckBound(posout, sprime, maxch, pos + 1, depth + 1, ref rP1, ref rP2, axles2);
         }
 
         // rejecting positioned outlet PO
         Console.Write("{0} Rejecting positioned outlet ", depth);
-        Console.Write("{0},{1}. ", posout.number[ii], x);
+        Console.Write("{0},{1}. ", posout.number[pos], x);
         s[pos] = -1;
-        allowedch -= posout.value[ii];
+        allowedch -= posout.value[pos];
         if (allowedch + forcedch <= maxch) {
           Console.Write("Inequality holds.\n");
           return ret2;
@@ -226,8 +226,8 @@ namespace LibraryCS2 {
       }// pos
 
       // 6.
-      //Debug.Assert(false,
-      //  "Unexpected error 101");
+      Debug.Assert(false,
+        "Unexpected error 101");
       return ret2;
 
     }// CheckBound
