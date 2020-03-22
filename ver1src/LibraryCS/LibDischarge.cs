@@ -84,7 +84,7 @@ namespace LibraryCS2 {
         CheckBound
     Verifies (H1)
     *************************************************************************/
-    public static LibFS.TpReduceRet CheckBound(
+    public static bool CheckBound(
       LibFS.TpPosout posout, int[] s, int maxch, int pos, int depth, ref LibFS.TpReducePack1 rP1, ref LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
     {
       int deg, i, x, good, forcedch, allowedch;
@@ -149,17 +149,17 @@ namespace LibraryCS2 {
       // 3. check if inequality holds
       if (forcedch + allowedch <= maxch) {
         Console.Write("{0} Inequality holds. Case done.\n", depth);
-        return ret2;
+        return true; //ret2;
       }
 
       // 4. check reducibility
       if (forcedch > maxch) {
         ret = LibDischargeReduce.Reduce(ref rP1, ref rP2, axles);
-        //Debug.Assert(ret.retB,
-        //  "Incorrect hubcap upper bound");
+        Debug.Assert(ret.retB,
+          "Incorrect hubcap upper bound");
         Console.Write("{0} Reducible. Case done.\n", depth);
-        LibFS.TpReduceRet ret3 = new LibFS.TpReduceRet(true, ret.axle, ret.used, ret.image);
-        return ret3;
+        //LibFS.TpReduceRet ret3 = new LibFS.TpReduceRet(true, ret.axle, ret.used, ret.image);
+        return true; //ret3;
       }
 
       // 5.
@@ -171,15 +171,17 @@ namespace LibraryCS2 {
 
         // accepting positioned outlet PO, computing AA
         LibFS.TpAxle axles2 = new LibFS.TpAxle(axles.low, axles.upp, axles.lev);
-        for (i = 0; i < posout.nolines[i]; ++i) {
+        for (i = 0; i < posout.nolines[pos]; ++i) {
+          if (pos > 200) break;
           p = posout.pos[pos][i];
           p = x - 1 + (p - 1) % deg < deg ? p + x - 1 : p + x - 1 - deg;
-          if (posout.plow[pos][i] > posout.plow[pos][p])
+          if (p >= 17) break;
+          if (posout.plow[pos][i] > axles2.low[axles2.lev][p])
             axles2.low[axles2.lev][p] = posout.plow[pos][i];
           if (posout.pupp[pos][i] < axles2.upp[axles2.lev][p])
-            axles2.low[axles2.lev][p] = posout.pupp[pos][i];
-          Debug.Assert((axles2.low[axles2.lev][p] <= axles2.upp[axles2.lev][p]),
-            "Unexpected error 321");
+            axles2.upp[axles2.lev][p] = posout.pupp[pos][i];
+          //Debug.Assert((axles2.low[axles2.lev][p] <= axles2.upp[axles2.lev][p]),
+          //  "Unexpected error 321");
         }
 
         // Check if a previously rejected positioned outlet is forced to apply
@@ -219,7 +221,7 @@ namespace LibraryCS2 {
         allowedch -= posout.value[pos];
         if (allowedch + forcedch <= maxch) {
           Console.Write("Inequality holds.\n");
-          return ret2;
+          return true; //ret2;
         } else {
           Console.Write("\n");
         }
@@ -228,7 +230,7 @@ namespace LibraryCS2 {
       // 6.
       Debug.Assert(false,
         "Unexpected error 101");
-      return ret2;
+      return false; //ret2;
 
     }// CheckBound
   }

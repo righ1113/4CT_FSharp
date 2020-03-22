@@ -14,6 +14,7 @@ module Di =
   let CARTVERT   = 5 * MAXVAL + 2 // domain of l_A, u_A, where A is an axle
   let INFTY      = 12             // the "12" in the definition of limited part
   let MAXOUTLETS = 110            // max number of outlets
+  let MAXSYM     = 50             // max number of symmetries
   let MAXELIST   = 134            // length of edgelist[a][b]
   let MAXSTACK   = 5              // max height of Astack (see "Reduce")
   let MAXLEV     = 12             // max level of an input line + 1
@@ -187,7 +188,15 @@ module Di =
     match ret with
       | None    -> nosym
       | Some(_) -> nosym + 1
-  let checkCondition2 (nn : int array, mm : int array) (axles : LibFS.TpAxle) n m =
+  let checkCondition2
+        (nn : int array, mm : int array)
+        deg
+        (axles : LibFS.TpAxle)
+        n
+        m
+        nosym
+        (posout : LibFS.TpPosout) =
+
     axles.low.[axles.lev+1] <- Array.copy axles.low.[axles.lev]
     axles.upp.[axles.lev+1] <- Array.copy axles.upp.[axles.lev]
     let aLowN = axles.low.[axles.lev].[n]
@@ -208,11 +217,35 @@ module Di =
         axles.low.[axles.lev]    .[n] <- 1 - m
         axles.upp.[axles.lev + 1].[n] <- -m
 
+    // remember symmetry unless contains a fan vertex
+    let mutable good = false
+    for i in 0..axles.lev do
+      if (nn.[i] > 2 * deg || nn.[i] < 1) then
+        good <- false //true
+    if good then // remember symmetry
+      Debug.Assert((nosym < MAXSYM), "Too many symmetries")
+      //T = &sym[nosym + 1];
+      //T->number = lineno;
+      posout.value.[nosym + 1] <- 1
+      posout.nolines.[nosym + 1] <- axles.lev + 1
+      for i in 0..axles.lev do
+        posout.pos.[nosym + 1].[i] <- nn.[i];
+        if (mm.[i] > 0) then
+          posout.plow.[nosym + 1].[i] <- mm.[i]
+          posout.pupp.[nosym + 1].[i] <- INFTY
+        else
+          posout.plow.[nosym + 1].[i] <- 5
+          posout.pupp.[nosym + 1].[i] <- -mm.[i]
+
     nn.[axles.lev]     <- n
     nn.[axles.lev + 1] <- 0
     mm.[axles.lev]     <- m
     mm.[axles.lev + 1] <- 0
-    ((nn, mm), (axles.low, axles.upp, axles.lev))
+
+    if good then
+      ((nn, mm), (axles.low, axles.upp, axles.lev), nosym + 1)
+    else
+      ((nn, mm), (axles.low, axles.upp, axles.lev), nosym)
 
 
   // main routine
@@ -269,9 +302,11 @@ module Di =
                 printfn "Condition %A" nowTac
                 let n = int (Int32.Parse nowTac.[2])
                 let m = int (Int32.Parse nowTac.[3])
-                let nosym2                   = checkCondition1 (nn, mm) deg axles n m nosym
-                let (cond2, (low2, upp2, _)) = checkCondition2 (nn, mm) axles n m
-                mainLoop &rP1 &rP2 posout cond2 deg nosym2 {low = low2; upp = upp2; lev = axles.lev + 1} (Array.tail tactics)
+                let nosym2 =
+                      checkCondition1 (nn, mm) deg axles n m nosym
+                let (cond2, (low2, upp2, _), nosym3) =
+                      checkCondition2 (nn, mm) deg axles n m nosym2 posout
+                mainLoop &rP1 &rP2 posout cond2 deg nosym3 {low = low2; upp = upp2; lev = axles.lev + 1} (Array.tail tactics)
             | _   ->
                 Debug.Assert(false, "Invalid instruction")
                 "error2"
