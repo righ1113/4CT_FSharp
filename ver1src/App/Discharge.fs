@@ -183,11 +183,6 @@ module Di =
 
 
   // 4.Condition
-  let checkCondition1 (nn, mm) deg axles n m nosym =
-    let ret = Array.tryFind (fun x -> 1 <= x && x <= 2 * deg) nn
-    match ret with
-      | None    -> nosym
-      | Some(_) -> nosym + 1
   let checkCondition2
         (nn : int array, mm : int array)
         deg
@@ -218,10 +213,10 @@ module Di =
         axles.upp.[axles.lev + 1].[n] <- -m
 
     // remember symmetry unless contains a fan vertex
-    let mutable good = false
+    let mutable good = true
     for i in 0..axles.lev do
-      if (nn.[i] > 2 * deg || nn.[i] < 1) then
-        good <- false //true
+      if (1 <= nn.[i] && nn.[i] <= 2 * deg) then
+        good <- false
     if good then // remember symmetry
       Debug.Assert((nosym < MAXSYM), "Too many symmetries")
       //T = &sym[nosym + 1];
@@ -302,11 +297,9 @@ module Di =
                 printfn "Condition %A" nowTac
                 let n = int (Int32.Parse nowTac.[2])
                 let m = int (Int32.Parse nowTac.[3])
-                let nosym2 =
-                      checkCondition1 (nn, mm) deg axles n m nosym
-                let (cond2, (low2, upp2, _), nosym3) =
-                      checkCondition2 (nn, mm) deg axles n m nosym2 posout
-                mainLoop &rP1 &rP2 posout cond2 deg nosym3 {low = low2; upp = upp2; lev = axles.lev + 1} (Array.tail tactics)
+                let (cond2, (low2, upp2, _), nosym2) =
+                      checkCondition2 (nn, mm) deg axles n m nosym posout
+                mainLoop &rP1 &rP2 posout cond2 deg nosym2 {low = low2; upp = upp2; lev = axles.lev + 1} (Array.tail tactics)
             | _   ->
                 Debug.Assert(false, "Invalid instruction")
                 "error2"
