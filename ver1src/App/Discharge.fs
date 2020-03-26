@@ -25,7 +25,7 @@ module Di =
   // Assertに引っかからなければ良し
   let checkSymmetry (str : string array)
                     (axles : LibFS.TpAxle)
-                    (posout : LibFS.TpPosout)
+                    (sym : LibFS.TpPosout)
                     nosym =
     let k       = int (Int32.Parse str.[0])
     let epsilon = int (Int32.Parse str.[1])
@@ -42,12 +42,12 @@ module Di =
     Debug.Assert((epsilon <> 0
       || LibDischargeSymmetry.OutletForced(axles.low.[axles.lev],
                                            axles.upp.[axles.lev],
-                                           posout.number.[i],
-                                           posout.nolines.[i],
-                                           posout.value.[i],
-                                           posout.pos.[i],
-                                           posout.plow.[i],
-                                           posout.pupp.[i],
+                                           sym.number.[i],
+                                           sym.nolines.[i],
+                                           sym.value.[i],
+                                           sym.pos.[i],
+                                           sym.plow.[i],
+                                           sym.pupp.[i],
                                            k+1,
                                            k+1) = 1),
       "Invalid symmetry")
@@ -189,8 +189,8 @@ module Di =
         (axles : LibFS.TpAxle)
         n
         m
-        nosym
-        (posout : LibFS.TpPosout) =
+        (sym : LibFS.TpPosout)
+        nosym =
 
     axles.low.[axles.lev+1] <- Array.copy axles.low.[axles.lev]
     axles.upp.[axles.lev+1] <- Array.copy axles.upp.[axles.lev]
@@ -215,22 +215,23 @@ module Di =
     // remember symmetry unless contains a fan vertex
     let mutable good = true
     for i in 0..axles.lev do
-      if (1 <= nn.[i] && nn.[i] <= 2 * deg) then
+      if (nn.[i] > 2 * deg || nn.[i] < 1) then
+      //if (1 <= nn.[i] && nn.[i] <= 2 * deg) then
         good <- false
     if good then // remember symmetry
       Debug.Assert((nosym < MAXSYM), "Too many symmetries")
       //T = &sym[nosym + 1];
       //T->number = lineno;
-      posout.value.[nosym + 1] <- 1
-      posout.nolines.[nosym + 1] <- axles.lev + 1
+      sym.value.[nosym] <- 1
+      sym.nolines.[nosym] <- axles.lev + 1
       for i in 0..axles.lev do
-        posout.pos.[nosym + 1].[i] <- nn.[i];
+        sym.pos.[nosym].[i] <- nn.[i];
         if (mm.[i] > 0) then
-          posout.plow.[nosym + 1].[i] <- mm.[i]
-          posout.pupp.[nosym + 1].[i] <- INFTY
+          sym.plow.[nosym].[i] <- mm.[i]
+          sym.pupp.[nosym].[i] <- INFTY
         else
-          posout.plow.[nosym + 1].[i] <- 5
-          posout.pupp.[nosym + 1].[i] <- -mm.[i]
+          sym.plow.[nosym].[i] <- 5
+          sym.pupp.[nosym].[i] <- -mm.[i]
 
     nn.[axles.lev]     <- n
     nn.[axles.lev + 1] <- 0
@@ -249,7 +250,8 @@ module Di =
                    posout
                    (nn, mm)
                    deg
-                   nosym
+                   (sym : LibFS.TpPosout)
+                   (nosym : int)
                    (axles : LibFS.TpAxle)
                    tactics =
     let nowTac = Array.head tactics
@@ -264,8 +266,8 @@ module Di =
           match nowTac.[1] with
             | "S" ->
                 printfn "Symmetry %A" nowTac
-                checkSymmetry (Array.tail (Array.tail nowTac)) axles posout nosym
-                //止めておくmainLoop rP1 rP2 posout (nn, mm) deg nosym (low, upp, lev - 1) (Array.tail tactics)
+                checkSymmetry (Array.tail (Array.tail nowTac)) axles sym nosym
+                //止めておくmainLoop rP1 rP2 posout (nn, mm) deg sym nosym (low, upp, lev - 1) (Array.tail tactics)
                 "Q.E.D"
             | "R" ->
                 printfn "Reduce %A" nowTac
@@ -276,6 +278,7 @@ module Di =
                            posout
                            (nn, mm)
                            deg
+                           sym
                            nosym
                            { axles with lev = axles.lev - 1; }
                            (Array.tail tactics)
@@ -290,6 +293,7 @@ module Di =
                          posout'
                          (nn, mm)
                          deg
+                         sym
                          nosym
                          { axles with lev = axles.lev - 1; }
                          (Array.tail tactics)
@@ -298,8 +302,8 @@ module Di =
                 let n = int (Int32.Parse nowTac.[2])
                 let m = int (Int32.Parse nowTac.[3])
                 let (cond2, (low2, upp2, _), nosym2) =
-                      checkCondition2 (nn, mm) deg axles n m nosym posout
-                mainLoop &rP1 &rP2 posout cond2 deg nosym2 {low = low2; upp = upp2; lev = axles.lev + 1} (Array.tail tactics)
+                      checkCondition2 (nn, mm) deg axles n m sym nosym
+                mainLoop &rP1 &rP2 posout cond2 deg sym nosym2 {low = low2; upp = upp2; lev = axles.lev + 1} (Array.tail tactics)
             | _   ->
                 Debug.Assert(false, "Invalid instruction")
                 "error2"
@@ -324,6 +328,16 @@ module Di =
     // TpOutlet & TpPosout
     let rules = LibFS.readFileRulesD
 
+    // sym
+    let symNum = Array.zeroCreate (MAXSYM + 1)
+    let symNol = Array.zeroCreate (MAXSYM + 1)
+    let symVal = Array.zeroCreate (MAXSYM + 1)
+    let symPos = Array.init (MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
+    let symLow = Array.init (MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
+    let symUpp = Array.init (MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
+    let symXxx = Array.zeroCreate (MAXSYM + 1)
+    let sym : LibFS.TpPosout = {number = symNum; nolines = symNol; value = symVal; pos = symPos; plow = symLow; pupp = symUpp; xx = symXxx}
+
     // TpReducePack
     let aSLow    = Array.init (MAXLEV + 1) (fun _ -> Array.zeroCreate CARTVERT)
     let aSUpp    = Array.init (MAXLEV + 1) (fun _ -> Array.zeroCreate CARTVERT)
@@ -342,6 +356,7 @@ module Di =
     let mutable redpk1 : LibFS.TpReducePack1 = {axle = axlepk; bLow = bLow; bUpp = bUpp; adjmat = {adj = adjmat};}
     let mutable redpk2 : LibFS.TpReducePack2 = {edgelist = {edg = edgelist}; used = used; image = {ver = image}; redquestions = graphs}
 
+    // tactics
     let tactics = LibFS.readFileTacticsD
 
     let ret = mainLoop &redpk1
@@ -349,6 +364,7 @@ module Di =
                        rules
                        (nn, mm)
                        deg
+                       sym
                        0
                        {low = axlesLow; upp = axlesUpp; lev = 0}
                        (Array.tail tactics)
