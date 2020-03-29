@@ -167,17 +167,18 @@ module Di =
     // 5.
     for i in 1..x.[0] do
       ignore <| printfn "\n-->Checking hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]
+      ignore <| printf ""
       for j in 0..(nouts-1) do
         posout.xx.[j] <- x.[i]
         s.[j] <- 0
       if x.[i] <> y.[i] then
-        for j in (nouts-1)..(2 * nouts - 1) do
+        for j in nouts..(2 * nouts - 1) do
           posout.xx.[j] <- y.[i]
           s.[j] <- 0
-        s.[2 * nouts - 1] <- 99 // to indicate end of list
+        s.[2 * nouts] <- 99 // to indicate end of list
       else
-        s.[nouts - 1] <- 99 // to indicate end of list
-        ignore <| LibDischargeHubcap.CheckBound(posout, s, v.[i], 0, 0, &rP1, &rP2, axles)
+        s.[nouts] <- 99 // to indicate end of list
+      ignore <| LibDischargeHubcap.CheckBound(posout, s, v.[i], 0, 0, &rP1, &rP2, axles)
     printfn ""
     posout
 

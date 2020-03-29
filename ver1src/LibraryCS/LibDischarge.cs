@@ -95,6 +95,16 @@ namespace LibraryCS2 {
       LibFS.TpReduceRet ret;
       LibFS.TpReduceRet ret2 = new LibFS.TpReduceRet(true, rP1.axle, rP2.used, rP2.image);
 
+      int j;
+      int[][] cpLow = new int[12 + 1][];
+      for (j = 0; j < 13; j++) {
+        cpLow[j] = new int[5 * 12 + 2];
+      }
+      int[][] cpUpp = new int[12 + 1][];
+      for (j = 0; j < 13; j++) {
+        cpUpp[j] = new int[5 * 12 + 2];
+      }
+
       deg = axles.low[axles.lev][0];
 
       // 1. compute forced and permitted rules, allowedch, forcedch, update s
@@ -155,9 +165,12 @@ namespace LibraryCS2 {
       // 4. check reducibility
       if (forcedch > maxch) {
         ret = LibDischargeReduce.Reduce(ref rP1, ref rP2, axles);
-        Debug.Assert(ret.retB,
-          "Incorrect hubcap upper bound");
-        Console.Write("{0} Reducible. Case done.\n", depth);
+        if (ret.retB == false) {
+          Console.Write("ihihi\n");
+        }
+        //Debug.Assert(ret.retB,
+        //  "Incorrect hubcap upper bound");
+        Console.Write("{0} {1} {2} Reducible. Case done.\n", forcedch, allowedch, maxch);
         //LibFS.TpReduceRet ret3 = new LibFS.TpReduceRet(true, ret.axle, ret.used, ret.image);
         return true; //ret3;
       }
@@ -170,9 +183,13 @@ namespace LibraryCS2 {
         x = posout.xx[pos];
 
         // accepting positioned outlet PO, computing AA
-        LibFS.TpAxle axles2 = new LibFS.TpAxle(axles.low, axles.upp, axles.lev);
+        for (j = 0; j < 13; j++) {
+          Array.Copy(axles.low[j], cpLow[j], axles.low[j].Length);
+          Array.Copy(axles.upp[j], cpUpp[j], axles.upp[j].Length);
+        }
+        LibFS.TpAxle axles2 = new LibFS.TpAxle(cpLow, cpUpp, axles.lev);
         for (i = 0; i < posout.nolines[pos]; ++i) {
-          if (pos > 200) break;
+          if (pos > 219) break;
           p = posout.pos[pos][i];
           p = x - 1 + (p - 1) % deg < deg ? p + x - 1 : p + x - 1 - deg;
           if (p >= 17) break;
@@ -180,8 +197,8 @@ namespace LibraryCS2 {
             axles2.low[axles2.lev][p] = posout.plow[pos][i];
           if (posout.pupp[pos][i] < axles2.upp[axles2.lev][p])
             axles2.upp[axles2.lev][p] = posout.pupp[pos][i];
-          //Debug.Assert((axles2.low[axles2.lev][p] <= axles2.upp[axles2.lev][p]),
-          //  "Unexpected error 321");
+          Debug.Assert((axles2.low[axles2.lev][p] <= axles2.upp[axles2.lev][p]),
+            "Unexpected error 321");
         }
 
         // Check if a previously rejected positioned outlet is forced to apply
