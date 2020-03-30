@@ -2,9 +2,9 @@ using System;
 using System.Diagnostics;
 
 namespace LibraryCS {
-  public class LibReduce {
+  public static class LibReduce {
   }
-  public class LibReduceStrip {
+  public static class LibReduceStrip {
     /* if grav meets the done vertices in an interval of length >=1, it returns
     * the length of the interval, and otherwise returns 0 */
     public static int Ininterval(int[] grav, bool[] done) {
@@ -99,7 +99,7 @@ namespace LibraryCS {
       return term;
     }
   }
-  public class LibReduceAngle {
+  public static class LibReduceAngle {
     public static void FindanglesSub2(
       int[][] graph, int[][] edgeno, int[] contract, int[][] angle, int[][] diffangle, int[][] sameangle)
     {
@@ -192,8 +192,8 @@ namespace LibraryCS {
         "         ***  ERROR: CONTRACT HAS NO TRIAD  ***\n\n");
     }
   }
-  public class LibReduceLive {
-    public static int[] simatchnumber = new int[] {0, 0, 1, 3, 10, 30, 95, 301, 980, 3228, 10797, 36487, 124542, 428506, 1485003};
+  public static class LibReduceLive {
+    public static readonly int[] simatchnumber = new int[] {0, 0, 1, 3, 10, 30, 95, 301, 980, 3228, 10797, 36487, 124542, 428506, 1485003};
     public static void Printstatus(
       int ring, int totalcols, int extent, int extentclaim)
     {
@@ -289,7 +289,7 @@ namespace LibraryCS {
       return (-1, live);
     }
   }
-  public class LibReduceUpdate {
+  public static class LibReduceUpdate {
     public static bool Stillreal(
       int col, int[] choice, int depth, int[] live, int on)
     {
@@ -401,7 +401,7 @@ namespace LibraryCS {
     }
 
   }
-  public class LibReduceContract {
+  public static class LibReduceContract {
     public static bool Inlive(
       int[] col, int ring, int[] live, int bigno, int[] power)
     {

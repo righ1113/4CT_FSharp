@@ -4,9 +4,19 @@ using LibraryFS;
 
 
 namespace LibraryCS2 {
-  public class LibDischarge {
+  public static class LibDischarge {
   }
-  public class LibDischargeSymmetry {
+  public static class LibDischargeSymmetry {
+    public static int DelSym(
+      int nosym, int nolines, int lev)
+    {
+
+      for (; nosym >= 1 && nolines - 1 >= lev; nosym--)
+      /* do nothing */ ;
+
+      return nosym;
+    }
+
     /*********************************************************************
                 OutletForced
     If (T,x) is enforced by A, then returns the value of T, otherwise 0
@@ -79,7 +89,7 @@ namespace LibraryCS2 {
     }
   }
 
-  public class LibDischargeHubcap {
+  public static class LibDischargeHubcap {
     /*************************************************************************
         CheckBound
     Verifies (H1)
@@ -252,7 +262,7 @@ namespace LibraryCS2 {
     }// CheckBound
   }
 
-  public class LibDischargeReduce {
+  public static class LibDischargeReduce {
     public const int CARTVERT    = 5 * 12 + 2;     // domain of l_A, u_A, where A is an axle
     public const int MAXELIST    = 134;            // length of edgelist[a][b]
     public const int MAXASTACK   = 5;              // max height of Astack (see "Reduce")

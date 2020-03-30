@@ -19,6 +19,7 @@ module Re =
   type TpAngle      = int array array
   type TpEdgeno     = int array array
 
+
   // 1. strip()
   let strip (graph : int array array) =
     let verts  = graph.[0+1].[0]
@@ -84,12 +85,13 @@ module Re =
   // 2. findangles()
   let findangles
         (graph     : int array array)
-        (angle     : TpAngle)
-        (diffangle : TpAngle)
-        (sameangle : TpAngle)
         (edgeno    : TpEdgeno) =
 
     let edge      = 3 * graph.[0+1].[0] - 3 - graph.[0+1].[1]
+
+    let angle     = Array.init EDGES (fun _ -> Array.zeroCreate 5)
+    let diffangle = Array.init EDGES (fun _ -> Array.zeroCreate 5)
+    let sameangle = Array.init EDGES (fun _ -> Array.zeroCreate 5)
 
     let contract  = Array.replicate (EDGES + 1) 0
     contract.[0]     <- graph.[1+1].[0] // number of edges in contract
@@ -327,9 +329,6 @@ module Re =
     printfn "start Reduce.fs"
 
     let graphs = LibFS.readFileGoodConfsR
-    let mutable angle     = Array.init EDGES (fun _ -> Array.zeroCreate 5)
-    let mutable diffangle = Array.init EDGES (fun _ -> Array.zeroCreate 5)
-    let mutable sameangle = Array.init EDGES (fun _ -> Array.zeroCreate 5)
 
     let mutable i = 0
     for graph in Array.take 11 (graphs) do
@@ -346,10 +345,7 @@ module Re =
           others will not be used unless a contract is specified, and if so
           they will be used in "checkcontract" below to verify that the
           contract is correct. *)
-      let (angle2, diffangle2, sameangle2, contract) = findangles graph angle diffangle sameangle edgeno
-      angle     <- angle2
-      diffangle <- diffangle2
-      sameangle <- sameangle2
+      let (angle, diffangle, sameangle, contract) = findangles graph edgeno
 
       // 3. findlive()
       let ring   = graph.[0+1].[1] // ring-size

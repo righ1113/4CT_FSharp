@@ -268,12 +268,14 @@ module Di =
             | "S" ->
                 printfn "Symmetry %A" nowTac
                 checkSymmetry (Array.tail (Array.tail nowTac)) axles sym nosym
-                //止めておくmainLoop rP1 rP2 posout (nn, mm) deg sym nosym (low, upp, lev - 1) (Array.tail tactics)
+                let nosym2 = LibDischargeSymmetry.DelSym(nosym, sym.nolines.[nosym - 1], axles.lev)
+                //止めておくmainLoop rP1 rP2 posout (nn, mm) deg sym nosym2 (low, upp, lev - 1) (Array.tail tactics)
                 "Q.E.D"
             | "R" ->
                 printfn "Reduce %A" nowTac
                 let ret : LibFS.TpReduceRet = reduce &rP1 &rP2 axles
                 if ret.retB then
+                  //let nosym2 = LibDischargeSymmetry.DelSym(nosym, sym.nolines.[nosym - 1], axles.lev)
                   mainLoop &rP1
                            &rP2
                            posout
@@ -289,6 +291,7 @@ module Di =
             | "H" ->
                 printfn "Hubcap %A" nowTac
                 let posout' = checkHubcap posout (Array.tail (Array.tail nowTac)) axles deg &rP1 &rP2
+                //let nosym2 = LibDischargeSymmetry.DelSym(nosym, sym.nolines.[nosym - 1], axles.lev)
                 mainLoop &rP1
                          &rP2
                          posout'
