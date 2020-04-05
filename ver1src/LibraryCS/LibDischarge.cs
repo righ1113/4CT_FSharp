@@ -22,7 +22,7 @@ namespace LibraryCS2 {
     If (T,x) is enforced by A, then returns the value of T, otherwise 0
     *********************************************************************/
     public static int OutletForced(
-      int[] lowI, int[] uppI, int numberI, int nolinesI, int valueI, int[] posI, int[] plowI, int[] puppI, int xxI, int y)
+      int[] lowI, int[] uppI, int numberI, int nolinesI, int valueI, int[] posI, int[] plowI, int[] puppI, int xxI)
     {
       int i, p, deg;
 
@@ -43,7 +43,7 @@ namespace LibraryCS2 {
     If (T,x) is permitted by A, then returns the value of T, otherwise 0
     *********************************************************************/
     public static int OutletPermitted(
-      int[] lowI, int[] uppI, int numberI, int nolinesI, int valueI, int[] posI, int[] plowI, int[] puppI, int xxI, int y)
+      int[] lowI, int[] uppI, int numberI, int nolinesI, int valueI, int[] posI, int[] plowI, int[] puppI, int xxI)
     {
       int deg, i, p;
 
@@ -65,7 +65,7 @@ namespace LibraryCS2 {
     corresponding to T
     ************************************************************************/
     public static int ReflForced(
-      int[] lowI, int[] uppI, int numberI, int nolinesI, int valueI, int[] posI, int[] plowI, int[] puppI, int xxI, int y)
+      int[] lowI, int[] uppI, int numberI, int nolinesI, int valueI, int[] posI, int[] plowI, int[] puppI, int xxI)
     {
       int deg, i, p, q;
 
@@ -99,11 +99,9 @@ namespace LibraryCS2 {
     {
       int deg, i, x, good, forcedch, allowedch;
       int[] sprime = new int[2 * 110 + 1];
-      //int ii;
       int p;
       int retN;
       LibFS.TpReduceRet ret;
-      LibFS.TpReduceRet ret2 = new LibFS.TpReduceRet(true, rP1.axle, rP2.used, rP2.image);
 
       int j;
       int[][] cpLow = new int[12 + 1][];
@@ -132,7 +130,6 @@ namespace LibraryCS2 {
                                                  posout.pos[i],
                                                  posout.plow[i],
                                                  posout.pupp[i],
-                                                 posout.xx[i],
                                                  posout.xx[i]);
         if (retN != 0) {
           s[i] = 1;
@@ -146,7 +143,6 @@ namespace LibraryCS2 {
                                                       posout.pos[i],
                                                       posout.plow[i],
                                                       posout.pupp[i],
-                                                      posout.xx[i],
                                                       posout.xx[i]) == 0) {
           s[i] = -1;
         }
@@ -169,7 +165,7 @@ namespace LibraryCS2 {
       // 3. check if inequality holds
       if (forcedch + allowedch <= maxch) {
         Console.Write("{0} Inequality holds. Case done.\n", depth);
-        return true; //ret2;
+        return true;
       }
 
       // 4. check reducibility
@@ -178,11 +174,10 @@ namespace LibraryCS2 {
         if (ret.retB == false) {
           Console.Write("ihihi\n");
         }
-        //Debug.Assert(ret.retB,
-        //  "Incorrect hubcap upper bound");
+        Debug.Assert(ret.retB,
+          "Incorrect hubcap upper bound");
         Console.Write("{0} {1} {2} Reducible. Case done.\n", forcedch, allowedch, maxch);
-        //LibFS.TpReduceRet ret3 = new LibFS.TpReduceRet(true, ret.axle, ret.used, ret.image);
-        return true; //ret3;
+        return true;
       }
 
       // 5.
@@ -202,7 +197,7 @@ namespace LibraryCS2 {
           if (pos > 219) break;
           p = posout.pos[pos][i];
           p = x - 1 + (p - 1) % deg < deg ? p + x - 1 : p + x - 1 - deg;
-          if (p >= 17) break;
+          if (p >= 62) break;
           if (posout.plow[pos][i] > axles2.low[axles2.lev][p])
             axles2.low[axles2.lev][p] = posout.plow[pos][i];
           if (posout.pupp[pos][i] < axles2.upp[axles2.lev][p])
@@ -215,15 +210,14 @@ namespace LibraryCS2 {
         good = 1;
         for (i = 0; i < pos; i++) {
           if (s[i] == -1
-              && LibDischargeSymmetry.OutletForced(axles.low[axles.lev],
-                                                   axles.upp[axles.lev],
+              && LibDischargeSymmetry.OutletForced(axles2.low[axles2.lev],
+                                                   axles2.upp[axles2.lev],
                                                    posout.number[i],
                                                    posout.nolines[i],
                                                    posout.value[i],
                                                    posout.pos[i],
                                                    posout.plow[i],
                                                    posout.pupp[i],
-                                                   posout.xx[i],
                                                    posout.xx[i]) != 0) {
             Console.Write("{0} Positioned outlet ", depth);
             Console.Write("{0},{1} can't be forced, because it forces {2},{3}\n", posout.number[pos], x, posout.number[i], posout.xx[i]);
@@ -248,7 +242,7 @@ namespace LibraryCS2 {
         allowedch -= posout.value[pos];
         if (allowedch + forcedch <= maxch) {
           Console.Write("Inequality holds.\n");
-          return true; //ret2;
+          return true;
         } else {
           Console.Write("\n");
         }
@@ -257,7 +251,7 @@ namespace LibraryCS2 {
       // 6.
       Debug.Assert(false,
         "Unexpected error 101");
-      return false; //ret2;
+      return false;
 
     }// CheckBound
   }
@@ -495,9 +489,7 @@ namespace LibraryCS2 {
     {
       rP1.axle.low[0] = axles.low[axles.lev];
       rP1.axle.upp[0] = axles.upp[axles.lev];
-      LibFS.TpAxle        aStackAxle = new LibFS.TpAxle(rP1.axle.low, rP1.axle.upp, rP1.axle.lev);
-      LibFS.TpReducePack1 aStack     = new LibFS.TpReducePack1(aStackAxle, rP1.bLow, rP1.bUpp, rP1.adjmat);
-      return ReduceSub(ref aStack, ref rP2);
+      return ReduceSub(ref rP1, ref rP2);
     }
 
     public static LibFS.TpReduceRet ReduceSub(

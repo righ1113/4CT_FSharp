@@ -48,7 +48,6 @@ module Di =
                                            sym.pos.[i],
                                            sym.plow.[i],
                                            sym.pupp.[i],
-                                           k+1,
                                            k+1) = 1),
       "Invalid symmetry")
     (*Debug.Assert((LibDischargeSymmetry.ReflForced(low.[lev],
@@ -59,7 +58,6 @@ module Di =
                                                   posout.pos.[i],
                                                   posout.plow.[i],
                                                   posout.pupp.[i],
-                                                  posout.xx.[i],
                                                   k+1) = 1),
       "Invalid reflected symmetry")*)
 
@@ -118,7 +116,6 @@ module Di =
                                              posout.pos.[j],
                                              posout.plow.[j],
                                              posout.pupp.[j],
-                                             i,
                                              i) <> 0 then
           if a = 0 then
             printf "\nEdge %d: " i
