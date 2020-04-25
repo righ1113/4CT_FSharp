@@ -8,10 +8,10 @@ namespace LibraryCS2 {
   }
   public static class LibDischargeSymmetry {
     public static int DelSym(
-      int nosym, int nolines, int lev)
+      int nosym, int[] nolines, int lev)
     {
 
-      for (; nosym >= 1 && nolines - 1 >= lev; nosym--)
+      for (; nosym >= 1 && nolines[nosym - 1] - 1 >= lev; nosym--)
       /* do nothing */ ;
 
       return nosym;

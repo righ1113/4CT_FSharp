@@ -31,7 +31,7 @@ module Di =
     let epsilon = int (Int32.Parse str.[1])
     let level   = int (Int32.Parse str.[2])
     let line    = int (Int32.Parse str.[3])
-    let i       = 0 //Array.find (fun x -> x = line) posout.number
+    let i       = Array.findIndex (fun x -> x = line) sym.number
 
     //Debug.Assert((k >= 0 && k <= Array.head low.[lev] && epsilon >= 0 && epsilon <= 1),
     //  "Illegal symmetry")
@@ -188,7 +188,8 @@ module Di =
         n
         m
         (sym : LibFS.TpPosout)
-        nosym =
+        nosym
+        lineno =
 
     axles.low.[axles.lev+1] <- Array.copy axles.low.[axles.lev]
     axles.upp.[axles.lev+1] <- Array.copy axles.upp.[axles.lev]
@@ -219,7 +220,7 @@ module Di =
     if good then // remember symmetry
       Debug.Assert((nosym < MAXSYM), "Too many symmetries")
       //T = &sym[nosym + 1];
-      //T->number = lineno;
+      sym.number.[nosym] <- lineno
       sym.value.[nosym] <- 1
       sym.nolines.[nosym] <- axles.lev + 1
       for i in 0..axles.lev do
@@ -251,7 +252,8 @@ module Di =
                    (sym : LibFS.TpPosout)
                    (nosym : int)
                    (axles : LibFS.TpAxle)
-                   tactics =
+                   tactics
+                   lineno  =
     let nowTac = Array.head tactics
     match axles.lev with
       | lev when lev >= MAXLEV ->
@@ -267,8 +269,8 @@ module Di =
                 checkSymmetry (Array.tail (Array.tail nowTac)) axles sym nosym
                 let nosym2 =
                   if nosym = 0 then 0
-                  else LibDischargeSymmetry.DelSym(nosym, sym.nolines.[nosym - 1], axles.lev)
-                //止めておくmainLoop rP1 rP2 posout (nn, mm) deg sym nosym2 (low, upp, lev - 1) (Array.tail tactics)
+                  else LibDischargeSymmetry.DelSym(nosym, sym.nolines, axles.lev)
+                //止めておくmainLoop rP1 rP2 posout (nn, mm) deg sym nosym2 (low, upp, lev - 1) (Array.tail tactics) (lineno + 1)
                 "Q.E.D"
             | "R" ->
                 printfn "Reduce %A" nowTac
@@ -276,7 +278,7 @@ module Di =
                 if ret.retB then
                   let nosym2 =
                     if nosym = 0 then 0
-                    else LibDischargeSymmetry.DelSym(nosym, sym.nolines.[nosym - 1], axles.lev)
+                    else LibDischargeSymmetry.DelSym(nosym, sym.nolines, axles.lev)
                   mainLoop &rP1
                            &rP2
                            posout
@@ -286,6 +288,7 @@ module Di =
                            nosym2
                            { axles with lev = axles.lev - 1; }
                            (Array.tail tactics)
+                           (lineno + 1)
                 else
                   Debug.Assert(false, "Reducibility failed")
                   "error3"
@@ -294,7 +297,7 @@ module Di =
                 let posout' = checkHubcap posout (Array.tail (Array.tail nowTac)) axles deg &rP1 &rP2
                 let nosym2 =
                   if nosym = 0 then 0
-                  else LibDischargeSymmetry.DelSym(nosym, sym.nolines.[nosym - 1], axles.lev)
+                  else LibDischargeSymmetry.DelSym(nosym, sym.nolines, axles.lev)
                 mainLoop &rP1
                          &rP2
                          posout'
@@ -304,13 +307,14 @@ module Di =
                          nosym2
                          { axles with lev = axles.lev - 1; }
                          (Array.tail tactics)
+                         (lineno + 1)
             | "C" ->
                 printfn "Condition %A" nowTac
                 let n = int (Int32.Parse nowTac.[2])
                 let m = int (Int32.Parse nowTac.[3])
                 let (cond2, (low2, upp2, _), nosym2) =
-                      checkCondition2 (nn, mm) deg axles n m sym nosym
-                mainLoop &rP1 &rP2 posout cond2 deg sym nosym2 {low = low2; upp = upp2; lev = axles.lev + 1} (Array.tail tactics)
+                      checkCondition2 (nn, mm) deg axles n m sym nosym lineno
+                mainLoop &rP1 &rP2 posout cond2 deg sym nosym2 {low = low2; upp = upp2; lev = axles.lev + 1} (Array.tail tactics) (lineno + 1)
             | _   ->
                 Debug.Assert(false, "Invalid instruction")
                 "error2"
@@ -375,6 +379,7 @@ module Di =
                        0
                        {low = axlesLow; upp = axlesUpp; lev = 0}
                        (Array.tail tactics)
+                       2
 
     // final check
     //if ret == "Q.E.D." then
