@@ -33,12 +33,15 @@ module Di =
     let line    = int (Int32.Parse str.[3])
     let i       = Array.findIndex (fun x -> x = line) sym.number
 
-    //Debug.Assert((k >= 0 && k <= Array.head low.[lev] && epsilon >= 0 && epsilon <= 1),
-    //  "Illegal symmetry")
-    //Debug.Assert((i < nosym),
-    //  "No symmetry as requested")
-    //Debug.Assert((posout.nolines.[i] = level + 1),
-    //  "Level mismatch")
+    Debug.Assert((k >= 0 &&
+                  k <= Array.head axles.low.[axles.lev] &&
+                  epsilon >= 0 &&
+                  epsilon <= 1),
+      "Illegal symmetry")
+    Debug.Assert((i < nosym),
+      "No symmetry as requested")
+    Debug.Assert((sym.nolines.[i] = level + 1),
+      "Level mismatch")
     Debug.Assert((epsilon <> 0
       || LibDischargeSymmetry.OutletForced(axles.low.[axles.lev],
                                            axles.upp.[axles.lev],
@@ -50,16 +53,16 @@ module Di =
                                            sym.pupp.[i],
                                            k+1) = 1),
       "Invalid symmetry")
-    (*Debug.Assert((LibDischargeSymmetry.ReflForced(low.[lev],
-                                                  upp.[lev],
-                                                  posout.number.[i],
-                                                  posout.nolines.[i],
-                                                  posout.value.[i],
-                                                  posout.pos.[i],
-                                                  posout.plow.[i],
-                                                  posout.pupp.[i],
+    Debug.Assert((LibDischargeSymmetry.ReflForced(axles.low.[axles.lev],
+                                                  axles.upp.[axles.lev],
+                                                  sym.number.[i],
+                                                  sym.nolines.[i],
+                                                  sym.value.[i],
+                                                  sym.pos.[i],
+                                                  sym.plow.[i],
+                                                  sym.pupp.[i],
                                                   k+1) = 1),
-      "Invalid reflected symmetry")*)
+      "Invalid reflected symmetry")
 
     printfn "  checkSymmetry OK."
     ()
