@@ -42,27 +42,28 @@ module Di =
       "No symmetry as requested")
     Debug.Assert((sym.nolines.[i] = level + 1),
       "Level mismatch")
-    Debug.Assert((epsilon <> 0
-      || LibDischargeSymmetry.OutletForced(axles.low.[axles.lev],
-                                           axles.upp.[axles.lev],
-                                           sym.number.[i],
-                                           sym.nolines.[i],
-                                           sym.value.[i],
-                                           sym.pos.[i],
-                                           sym.plow.[i],
-                                           sym.pupp.[i],
-                                           k+1) = 1),
-      "Invalid symmetry")
-    Debug.Assert((LibDischargeSymmetry.ReflForced(axles.low.[axles.lev],
-                                                  axles.upp.[axles.lev],
-                                                  sym.number.[i],
-                                                  sym.nolines.[i],
-                                                  sym.value.[i],
-                                                  sym.pos.[i],
-                                                  sym.plow.[i],
-                                                  sym.pupp.[i],
-                                                  k+1) = 1),
-      "Invalid reflected symmetry")
+    if epsilon = 0 then
+      Debug.Assert((LibDischargeSymmetry.OutletForced(axles.low.[axles.lev],
+                                                      axles.upp.[axles.lev],
+                                                      sym.number.[i],
+                                                      sym.nolines.[i],
+                                                      sym.value.[i],
+                                                      sym.pos.[i],
+                                                      sym.plow.[i],
+                                                      sym.pupp.[i],
+                                                      k+1) = 1),
+        "Invalid symmetry")
+    else
+      Debug.Assert((LibDischargeSymmetry.ReflForced(axles.low.[axles.lev],
+                                                    axles.upp.[axles.lev],
+                                                    sym.number.[i],
+                                                    sym.nolines.[i],
+                                                    sym.value.[i],
+                                                    sym.pos.[i],
+                                                    sym.plow.[i],
+                                                    sym.pupp.[i],
+                                                    k+1) = 1),
+        "Invalid reflected symmetry")
 
     printfn "  checkSymmetry OK."
     ()
@@ -273,8 +274,17 @@ module Di =
                 let nosym2 =
                   if nosym = 0 then 0
                   else LibDischargeSymmetry.DelSym(nosym, sym.nolines, axles.lev)
-                //止めておくmainLoop rP1 rP2 posout (nn, mm) deg sym nosym2 (low, upp, lev - 1) (Array.tail tactics) (lineno + 1)
-                "Q.E.D"
+                mainLoop &rP1
+                         &rP2
+                         posout
+                         (nn, mm)
+                         deg
+                         sym
+                         nosym2
+                         { axles with lev = axles.lev - 1; }
+                         (Array.tail tactics)
+                         (lineno + 1)
+                // 止めていた名残"Q.E.D"
             | "R" ->
                 printfn "Reduce %A" nowTac
                 let ret : LibFS.TpReduceRet = reduce &rP1 &rP2 axles

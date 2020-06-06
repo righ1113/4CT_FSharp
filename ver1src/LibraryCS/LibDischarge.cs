@@ -173,6 +173,7 @@ namespace LibraryCS2 {
         ret = LibDischargeReduce.Reduce(ref rP1, ref rP2, axles);
         if (ret.retB == false) {
           Console.Write("ihihi\n");
+          // 381 L5 H  (1,1,3) (2,2,3) (3,3,-3) (4,4,4) (5,5,4) (6,6,1) (7,7,-2)
         }
         Debug.Assert(ret.retB,
           "Incorrect hubcap upper bound");
@@ -435,7 +436,7 @@ namespace LibraryCS2 {
       image.ver[question.qc[0]] = x;
       image.ver[question.qc[1]] = y;
       used[x] = true;
-      used[y] = false;
+      used[y] = true;
       //for (Q = question + 2; Q->u >= 0; Q++) {
       for (j = 2; question.qa[j] >= 0; j++) {
         if (clockwise != 0)
