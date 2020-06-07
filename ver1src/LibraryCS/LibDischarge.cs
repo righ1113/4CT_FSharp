@@ -30,8 +30,10 @@ namespace LibraryCS2 {
       xxI--;
       for (i = 0; i < nolinesI; ++i) {
         p = posI[i];
-        p = xxI + (p - 1) % deg < deg ? p + xxI : p + xxI - deg;
-        if (p >= puppI.Length){ p = puppI.Length - 1; }
+        p = (xxI + ((p - 1) % deg)) < deg ? p + xxI : p + xxI - deg;
+        if (p >= uppI.Length) {
+          p = uppI.Length - 1;
+        }
         if (plowI[i] > lowI[p] || puppI[i] < uppI[p])
           return 0;
       }
@@ -195,10 +197,14 @@ namespace LibraryCS2 {
         }
         LibFS.TpAxle axles2 = new LibFS.TpAxle(cpLow, cpUpp, axles.lev);
         for (i = 0; i < posout.nolines[pos]; ++i) {
-          if (pos > 219) break;
+          if (pos > 219) {
+            break;
+          }
           p = posout.pos[pos][i];
           p = x - 1 + (p - 1) % deg < deg ? p + x - 1 : p + x - 1 - deg;
-          if (p >= 62) break;
+          if (p >= 62) {
+            break;
+          }
           if (posout.plow[pos][i] > axles2.low[axles2.lev][p])
             axles2.low[axles2.lev][p] = posout.plow[pos][i];
           if (posout.pupp[pos][i] < axles2.upp[axles2.lev][p])
