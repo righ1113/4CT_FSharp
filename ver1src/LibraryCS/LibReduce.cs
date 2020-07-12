@@ -246,7 +246,7 @@ namespace LibraryCS {
     {
       int x, extent=0, u, i;
 
-      for (x = 0; x < 8192; x++) {
+      for (x = 0; x < 262144; x++) {
 
         while ((forbidden[j] & c[j]) != 0) {
           c[j] <<= 1;
@@ -285,7 +285,7 @@ namespace LibraryCS {
       }
 
       Debug.Assert(false,
-        "FindliveSub : It was not good though it was repeated 8192 times!");
+        "FindliveSub : It was not good though it was repeated 262144 times!");
       return (-1, live);
     }
   }
@@ -300,7 +300,7 @@ namespace LibraryCS {
       int ntwisted, nuntwisted;
       int[] sum       = new int[64];
       int[] twisted   = new int[64];
-      int[] untwisted = new int[8];
+      int[] untwisted = new int[64];
 
       ntwisted = nuntwisted = 0;
       if (col < 0) {
@@ -436,7 +436,7 @@ namespace LibraryCS {
       int[] dm = new int[5];
       int[] sm = new int[5];
 
-      for (x = 0; x < 4096; x++) {
+      for (x = 0; x < 2097152; x++) {
         while ((forbidden[j] & c[j]) != 0) {
           c[j] <<= 1;
           while ((c[j] & 8) != 0) {
@@ -481,7 +481,7 @@ namespace LibraryCS {
         forbidden[j] = u;
       }
       Debug.Assert(false,
-        "checkContractSub : It was not good though it was repeated 4096 times!");
+        "checkContractSub : It was not good though it was repeated 2097152 times!");
     }
   }
 }
