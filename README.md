@@ -4,6 +4,7 @@
 四色定理をF#に移植したよ  
 
 # 変更履歴
+20/07/12　Reduce, Discharge 二周目終了、Reduce と Discharge の deg=7 は動く  
 20/03/09　Reduce 二周目終了  
 20/02/16　Reduce, Discharge 一周目終了  
 19/12/27　ver1srcに移行  
