@@ -26,13 +26,12 @@ module Re =
     let ring   = graph.[0+1].[1] // ring-size
     let edgeno = Array.init EDGES (fun _ -> Array.zeroCreate EDGES)
 
-    // ★★★ stripSub1
+    // stripSub1
     let mutable u = 0
     for v in 1..ring do
       u <- if v > 1 then v - 1 else ring
       edgeno.[u].[v] <- v
       edgeno.[v].[u] <- v
-
     let done0 = Array.replicate MVERTS false
     let mutable term  = 3 * (verts - 1) - ring
 
@@ -114,11 +113,11 @@ module Re =
     angle.[0].[1]     <- diffangle.[0].[1]
     angle.[0].[2]     <- diffangle.[0].[2]
 
-    // ★★★ findanglesSub2
+    // findanglesSub2
     // angle, diffangle, sameangleに破壊的代入をおこなう
     LibReduceAngle.FindanglesSub2 (graph, edgeno, contract, angle, diffangle, sameangle)
 
-    // ★★★ findanglesSub3
+    // findanglesSub3
     LibReduceAngle.FindanglesSub3 (MVERTS, graph, contract)
 
     (angle, diffangle, sameangle, contract) : TpAngle * TpAngle * TpAngle * int array
@@ -164,7 +163,6 @@ module Re =
      * signings of it, and adjusts the corresponding entries in "real" and
      * "live". *)
     let newinterval = Array.replicate 10 0
-
     LibReduceUpdate.Checkreality (depth, weight, live, real, &pnreal, ring, basecol, on, &pbit, &prealterm, nchar)
     let depth1 = depth + 1
     for r in 1..n do
@@ -191,11 +189,11 @@ module Re =
             h2 <- h2 + 1
           augment newn newinterval depth1 weight matchweight live real &pnreal ring basecol on &pbit &prealterm nchar
     ()
+
   let testmatch ring real live nchar =
     (* This generates all balanced signed matchings, and for each one, tests
      * whether all associated colourings belong to "live". It writes the answers
      * in the bits of the characters of "real". *)
-
     let mutable nreal = 0
     (* "nreal" will be the number of balanced signed matchings such that all
     * associated colourings belong to "live"; ie the total number of nonzero
@@ -203,7 +201,6 @@ module Re =
     let mutable bit = 1y
     let mutable realterm = 0
     // First, it generates the matchings not incident with the last ring edge
-
     let matchweight = Array.init 16 (fun _ -> (Array.init 16 (fun _ -> Array.zeroCreate 4)))
     let interval    = Array.replicate 10 0
     let weight      = Array.init 16 (fun _ -> Array.zeroCreate 4)
@@ -226,7 +223,6 @@ module Re =
           interval.[2 * n - 1] <- b + 1
           interval.[2 * n]     <- a - 1
         augment n interval 1 weight matchweight live real &nreal ring 0 0 &bit &realterm nchar
-
     // now, the matchings using an edge incident with "ring"
     for a in 2..ring do
       for b in 1..(a-1) do
@@ -247,7 +243,6 @@ module Re =
         interval.[2 * n]     <- ring - 1
       augment n interval 1 weight matchweight live real &nreal ring ((POWER.[ring + 1] - 1) / 2) 1 &bit &realterm nchar
     printfn "                       %d" nreal //right
-
     ()
 
   let updateSub (live : int array) ncols (p : byref<int>) =
@@ -330,8 +325,8 @@ module Re =
 
     let graphs = LibFS.readFileGoodConfsR
 
-    let mutable i = 0
-    for graph in Array.take 11 (graphs) do
+    let mutable i = 1
+    for graph in graphs do
       printfn "%d" i
       i <- i + 1
 
@@ -372,6 +367,8 @@ module Re =
             "         ***  ERROR: CONTRACT PROPOSED  ***\n\n")
       else
         checkContract ring bigno live2 nlive2 diffangle sameangle contract
+
+    printfn "633個の好配置は全て、Ｄ可約 or Ｃ可約です。"
 
     true
 

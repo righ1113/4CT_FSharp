@@ -284,7 +284,7 @@ module Di =
                          { axles with lev = axles.lev - 1; }
                          (Array.tail tactics)
                          (lineno + 1)
-                // 止めていた名残"Q.E.D"
+                // "Q.E.D."
             | "R" ->
                 printfn "Reduce %A" nowTac
                 let ret : LibFS.TpReduceRet = reduce &rP1 &rP2 axles
@@ -395,10 +395,10 @@ module Di =
                        2
 
     // final check
-    //if ret == "Q.E.D." then
-    //  putStrLn $ "中心の次数" ++ degStr ++ "のグラフは、電荷が負になるか、近くに好配置があらわれるかです"
-    //else
-    //  putStr ""
+    if ret = "Q.E.D." then
+      printfn "中心の次数 %d のグラフは、電荷が負になるか、近くに好配置があらわれるかです。" deg
+    else
+      printfn ""
 
     true
 
