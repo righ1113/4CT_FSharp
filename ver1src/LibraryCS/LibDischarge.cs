@@ -554,9 +554,43 @@ namespace LibraryCS2 {
       }//naxles
 
       Console.Write("All possibilities for lower degrees tested\n");
-      LibFS.TpReduceRet retT = new LibFS.TpReduceRet(true,  aStack.axle, rP2.used, rP2.image);
+      LibFS.TpReduceRet retT = new LibFS.TpReduceRet(true, aStack.axle, rP2.used, rP2.image);
       return retT;
 
+    }
+  }
+
+  public static class LibDischargeReadRule {
+    public const int MAXSYM = 50;             // max number of symmetries
+
+    public static LibFS.TpPosout ReadRuleD(
+      )
+    {
+      int retB = LibFS.readFileRulesD2;
+
+      int[] num = new int[MAXSYM + 1];
+      int[] nol = new int[MAXSYM + 1];
+      int[] val = new int[MAXSYM + 1];
+
+      int j;
+      int[][] pos = new int[MAXSYM + 1][];
+      for (j = 0; j < MAXSYM + 1; j++) {
+        pos[j] = new int[17];
+      }
+      int[][] low = new int[MAXSYM + 1][];
+      for (j = 0; j < MAXSYM + 1; j++) {
+        low[j] = new int[17];
+      }
+      int[][] upp = new int[MAXSYM + 1][];
+      for (j = 0; j < MAXSYM + 1; j++) {
+        upp[j] = new int[17];
+      }
+
+      int[] xxx = new int[MAXSYM + 1];
+
+      LibFS.TpPosout ret = new LibFS.TpPosout(num, nol, val, pos, low, upp, xxx);
+
+      return ret;
     }
   }
 

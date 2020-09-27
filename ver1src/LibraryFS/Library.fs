@@ -4,6 +4,7 @@ open System
 open System.IO
 open FSharp.Data
 
+
 module LibFS =
   type TpConfmat = JsonProvider<"[[[1]]]">
   type TpDiConfs = JsonProvider<"""[{"a":[0], "b":[0], "c":[8], "d":[6]}]""">
@@ -25,14 +26,6 @@ module LibFS =
     //File.ReadAllText "../../../../4ctdata/goodConfs.txt" // Visual Studio
     |> TpConfmat.Parse
 
-    //printfn "%d" hoge2.[0].[0].[1]
-    //let hoge = str.Split ' '
-    //printfn "%s" hoge.[0]
-    //"ok"
-
-//    |> String.
-//    |> TpConfmat.Parse
-//    |> List.map Tail
 
   let readFileGoodConfsD =
     let mutable out = [||] 
@@ -46,6 +39,7 @@ module LibFS =
     let ind = TpDiRules.Parse <| File.ReadAllText "4ctdata/DiRules07.txt" // VSCode
     //let ind = TpDiRules.Parse <| File.ReadAllText "../../../../4ctdata/DiRules07.txt" // Visual Studio
     {number = ind.A; nolines = ind.B; value = ind.C; pos = ind.D; plow = ind.E; pupp = ind.F; xx = ind.G}
+  let readFileRulesD2 : int = 3
 
   let readFileTacticsD =
     File.ReadAllLines "4ctdata/DiTactics07.txt" // VSCode

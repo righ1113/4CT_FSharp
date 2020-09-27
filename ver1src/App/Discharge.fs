@@ -350,7 +350,8 @@ module Di =
     let mm = Array.replicate MAXLEV 0
 
     // TpOutlet & TpPosout
-    let rules = LibFS.readFileRulesD
+    let rules  = LibFS.readFileRulesD
+    let rules2 = LibDischargeReadRule.ReadRuleD()
 
     // sym
     let symNum = Array.zeroCreate (MAXSYM + 1)
