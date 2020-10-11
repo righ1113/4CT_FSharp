@@ -566,8 +566,6 @@ namespace LibraryCS2 {
     public static LibFS.TpPosout ReadRuleD(
       )
     {
-      int retB = LibFS.readFileRulesD2;
-
       int[] num = new int[MAXSYM + 1];
       int[] nol = new int[MAXSYM + 1];
       int[] val = new int[MAXSYM + 1];
@@ -589,6 +587,13 @@ namespace LibraryCS2 {
       int[] xxx = new int[MAXSYM + 1];
 
       LibFS.TpPosout ret = new LibFS.TpPosout(num, nol, val, pos, low, upp, xxx);
+
+      var retR = LibFS.readFileRulesD2;
+      foreach (LibFS.TpRules2Ret line in retR)
+      {
+        string hoo = line.Comment;
+        int[] bar = line.B;
+      }
 
       return ret;
     }
