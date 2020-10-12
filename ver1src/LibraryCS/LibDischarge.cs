@@ -561,7 +561,11 @@ namespace LibraryCS2 {
   }
 
   public static class LibDischargeReadRule {
+    public const int INFTY  = 12;             // the "12" in the definition of limited part
     public const int MAXSYM = 50;             // max number of symmetries
+    public static readonly int[] U = new int[] {0, 0, 0, 1, 0, 3, 2, 1, 4, 3, 8, 3, 0, 0, 5, 6, 15};
+    public static readonly int[] V = new int[] {0, 0, 1, 0, 2, 0, 1, 3, 2, 5, 2, 9, 4, 12, 0, 1, 1};
+    public static LibFS.TpAdjmat adjmat;
 
     public static LibFS.TpPosout ReadRuleD(
       )
@@ -597,6 +601,70 @@ namespace LibraryCS2 {
 
       return ret;
     }
+
+    public static bool DoOutlet(
+      LibFS.TpAxle A, int number, int [] z, int [] b, LibFS.TpPosout T, int index, int lineno)
+    {
+      int i, j, k, u, v, deg;
+      int[] phi = new int[17];
+
+      //Getadjmat(A, adjmat);
+      deg = A.low[A.lev][0];
+      T.nolines[index] = z[0] - 1;
+      T.number[index] = number;
+      for (i = 0; i < 17; i++)
+        phi[i] = -1;
+      if (number > 0) {
+        phi[0] = 1;
+        phi[1] = 0;
+        T.value[index] = 1;
+        k = 1;
+      } else {
+        phi[0] = 0;
+        phi[1] = 1;
+        T.value[index] = -1;
+        k = 0;
+      }
+      T.pos[index][0] = 1;
+
+      /* compute phi */
+      for (i = j = 0; j < z[0]; i++, j++) {
+        T.plow[index][i] = b[j] / 10;
+        T.pupp[index][i] = b[j] % 10;
+        if (T.pupp[index][i] == 9)
+          T.pupp[index][i] = INFTY;
+        if (T.plow[index][i] == 0)
+          T.plow[index][i] = T.pupp[index][i];
+        /* checking (T2) */
+        //if (T->low[i] > T->upp[i])
+        //  Error("Condition (T2) from def of outlet violated", lineno);
+        /* checking (T3) */
+        //if (T->low[i] < 5 || T->low[i] > 9 || T->upp[i] > INFTY || T->upp[i] == 9)
+        //  Error("Condition (T3) from def of outlet violated", lineno);
+        if (j == k) {
+          if (T.plow[index][k] > deg || T.pupp[index][k] < deg)
+            return false;
+          /* if above true then outlet cannot apply for this degree */
+          i--;
+          continue;
+        }
+        if (j >= 2) {	/* now computing T->pos[i] */
+          u = phi[U[z[j]]];
+          v = phi[V[z[j]]];
+          //if (u < 0 || u > 5 * deg || v < 0 || v > 5 * deg)
+          //  Error("Rule references illegal vertex", lineno);
+          T.pos[index][i] = phi[z[j]] = adjmat.adj[u][v];
+        }
+        u = T.pos[index][i];
+        //if (u <= 0 || u > 5 * deg)
+        //  Error("Rule uses illegal vertex", lineno);
+        if (u <= deg && T.plow[index][i] == T.pupp[index][i])
+          u=1;
+          //DoFan(deg, u, T->low[i], adjmat);	/* update adjmat */
+      }
+      /* Condition (T4) is checked in CheckIso */
+      return true;
+    }/* DoOutlet */
   }
 
 }
