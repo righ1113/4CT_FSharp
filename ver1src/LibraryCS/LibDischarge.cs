@@ -561,19 +561,21 @@ namespace LibraryCS2 {
   }
 
   public static class LibDischargeReadRule {
-    public const int INFTY  = 12;             // the "12" in the definition of limited part
-    public const int MAXSYM = 50;             // max number of symmetries
+    public const int MAXVAL   = 12;
+    public const int CARTVERT = 5 * MAXVAL + 2; // domain of l_A, u_A, where A is an axle
+    public const int INFTY    = 12;             // the "12" in the definition of limited part
+    public const int MAXSYM   = 50;             // max number of symmetries
     public static readonly int[] U = new int[] {0, 0, 0, 1, 0, 3, 2, 1, 4, 3, 8, 3, 0, 0, 5, 6, 15};
     public static readonly int[] V = new int[] {0, 0, 1, 0, 2, 0, 1, 3, 2, 5, 2, 9, 4, 12, 0, 1, 1};
-    public static LibFS.TpAdjmat adjmat;
 
     public static LibFS.TpPosout ReadRuleD(
       )
     {
+
+      // posout
       int[] num = new int[MAXSYM + 1];
       int[] nol = new int[MAXSYM + 1];
       int[] val = new int[MAXSYM + 1];
-
       int j;
       int[][] pos = new int[MAXSYM + 1][];
       for (j = 0; j < MAXSYM + 1; j++) {
@@ -587,11 +589,17 @@ namespace LibraryCS2 {
       for (j = 0; j < MAXSYM + 1; j++) {
         upp[j] = new int[17];
       }
-
       int[] xxx = new int[MAXSYM + 1];
-
       LibFS.TpPosout ret = new LibFS.TpPosout(num, nol, val, pos, low, upp, xxx);
 
+      // adjmat
+      int[][] adj = new int[CARTVERT][];
+      for (j = 0; j < CARTVERT; j++) {
+        adj[j] = new int[CARTVERT];
+      }
+      LibFS.TpAdjmat adjmat = new LibFS.TpAdjmat(adj);
+
+      // read rule
       var retR = LibFS.readFileRulesD2;
       foreach (LibFS.TpRules2Ret line in retR)
       {
@@ -603,7 +611,7 @@ namespace LibraryCS2 {
     }
 
     public static bool DoOutlet(
-      LibFS.TpAxle A, int number, int [] z, int [] b, LibFS.TpPosout T, int index, int lineno)
+      LibFS.TpAxle A, int number, int [] z, int [] b, LibFS.TpPosout T, int index, int lineno, LibFS.TpAdjmat adjmat)
     {
       int i, j, k, u, v, deg;
       int[] phi = new int[17];
