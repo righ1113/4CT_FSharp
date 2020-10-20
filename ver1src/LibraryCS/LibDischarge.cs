@@ -569,8 +569,9 @@ namespace LibraryCS2 {
     public static readonly int[] V = new int[] {0, 0, 1, 0, 2, 0, 1, 3, 2, 5, 2, 9, 4, 12, 0, 1, 1};
 
     public static LibFS.TpPosout ReadRuleD(
-      )
+      LibFS.TpAxle axles)
     {
+      int index = 0;
 
       // posout
       int[] num = new int[MAXSYM + 1];
@@ -601,10 +602,16 @@ namespace LibraryCS2 {
 
       // read rule
       var retR = LibFS.readFileRulesD2;
+
+      // set data
       foreach (LibFS.TpRules2Ret line in retR)
       {
-        string hoo = line.Comment;
-        int[] bar = line.B;
+        /* if ( DoOutlet(axles, line.Z[1], line.Z, line.B, ret, index, -1, adjmat) ) {
+          index++;
+        }
+        if ( DoOutlet(axles, -line.Z[1], line.Z, line.B, ret, index, -1, adjmat) ) {
+          index++;
+        } */
       }
 
       return ret;
@@ -616,7 +623,7 @@ namespace LibraryCS2 {
       int i, j, k, u, v, deg;
       int[] phi = new int[17];
 
-      //Getadjmat(A, adjmat);
+      LibDischargeReduce.Getadjmat(0, A, adjmat);
       deg = A.low[A.lev][0];
       T.nolines[index] = z[0] - 1;
       T.number[index] = number;
@@ -667,8 +674,7 @@ namespace LibraryCS2 {
         //if (u <= 0 || u > 5 * deg)
         //  Error("Rule uses illegal vertex", lineno);
         if (u <= deg && T.plow[index][i] == T.pupp[index][i])
-          u=1;
-          //DoFan(deg, u, T->low[i], adjmat);	/* update adjmat */
+          LibDischargeReduce.DoFan(deg, i, A.upp[A.lev][i], adjmat); /* update adjmat */
       }
       /* Condition (T4) is checked in CheckIso */
       return true;

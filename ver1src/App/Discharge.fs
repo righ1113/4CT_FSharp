@@ -344,6 +344,7 @@ module Di =
     let axlesUpp0 = Array.take CARTVERT (Array.concat [| [|deg|]; (Array.create (5*deg) INFTY); (Array.replicate 1000 0) |])
     let axlesLow  = Array.append [|axlesLow0|] axles0
     let axlesUpp  = Array.append [|axlesUpp0|] axles0
+    let axles : LibFS.TpAxle = {low = axlesLow; upp = axlesUpp; lev = 0}
 
     // TpCond
     let nn = Array.replicate MAXLEV 0
@@ -351,7 +352,7 @@ module Di =
 
     // TpOutlet & TpPosout
     let rules  = LibFS.readFileRulesD
-    let rules2 = LibDischargeReadRule.ReadRuleD()
+    let rules2 = LibDischargeReadRule.ReadRuleD(axles)
 
     // sym
     let symNum = Array.zeroCreate (MAXSYM + 1)
@@ -391,7 +392,7 @@ module Di =
                        deg
                        sym
                        0
-                       {low = axlesLow; upp = axlesUpp; lev = 0}
+                       axles
                        (Array.tail tactics)
                        2
 
