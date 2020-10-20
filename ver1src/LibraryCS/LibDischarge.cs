@@ -606,6 +606,7 @@ namespace LibraryCS2 {
       // set data
       foreach (LibFS.TpRules2Ret line in retR)
       {
+        // 20/10/21 VSCode + GitHub test
         /* if ( DoOutlet(axles, line.Z[1], line.Z, line.B, ret, index, -1, adjmat) ) {
           index++;
         }
@@ -623,7 +624,7 @@ namespace LibraryCS2 {
       int i, j, k, u, v, deg;
       int[] phi = new int[17];
 
-      LibDischargeReduce.Getadjmat(0, A, adjmat);
+      LibDischargeReduce.Getadjmat(A.lev, A, adjmat);
       deg = A.low[A.lev][0];
       T.nolines[index] = z[0] - 1;
       T.number[index] = number;

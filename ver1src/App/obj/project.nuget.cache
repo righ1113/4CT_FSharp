@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "IeAP0uw9TVFGiCh6mDE1t+tMnok7EUS+4Pz+exTEhnneub7vsPf/FfMA7cf/Z4wtfYd0q7sJZLJYenm+cxsMzw==",
+  "success": true,
+  "projectFilePath": "/home/furuta6/me/F#/4CT_FSharp/ver1src/App/App.fsproj",
+  "expectedPackageFiles": [
+    "/home/furuta6/.nuget/packages/fsharp.core/4.7.2/fsharp.core.4.7.2.nupkg.sha512",
+    "/home/furuta6/.nuget/packages/fsharp.data/3.3.2/fsharp.data.3.3.2.nupkg.sha512",
+    "/home/furuta6/.nuget/packages/fsharpplus/1.0.0/fsharpplus.1.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
