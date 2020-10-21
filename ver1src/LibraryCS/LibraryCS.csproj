@@ -8,6 +8,14 @@
     <ProjectReference Include="..\LibraryFS\LibraryFS.fsproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="LibDischarge.cs" />
+    <Compile Include="LibReduce.cs" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
 
 </Project>
 
