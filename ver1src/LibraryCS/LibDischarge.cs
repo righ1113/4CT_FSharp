@@ -606,7 +606,6 @@ namespace LibraryCS2 {
       // set data
       foreach (LibFS.TpRules2Ret line in retR)
       {
-        // 20/10/21 VSCode + GitHub test
         /* if ( DoOutlet(axles, line.Z[1], line.Z, line.B, ret, index, -1, adjmat) ) {
           index++;
         }
@@ -675,7 +674,7 @@ namespace LibraryCS2 {
         //if (u <= 0 || u > 5 * deg)
         //  Error("Rule uses illegal vertex", lineno);
         if (u <= deg && T.plow[index][i] == T.pupp[index][i])
-          LibDischargeReduce.DoFan(deg, i, A.upp[A.lev][i], adjmat); /* update adjmat */
+          LibDischargeReduce.DoFan(deg, u, A.upp[A.lev][i], adjmat); /* update adjmat */
       }
       /* Condition (T4) is checked in CheckIso */
       return true;
