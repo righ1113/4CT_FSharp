@@ -561,10 +561,11 @@ namespace LibraryCS2 {
   }
 
   public static class LibDischargeReadRule {
-    public const int MAXVAL   = 12;
-    public const int CARTVERT = 5 * MAXVAL + 2; // domain of l_A, u_A, where A is an axle
-    public const int INFTY    = 12;             // the "12" in the definition of limited part
-    public const int MAXSYM   = 50;             // max number of symmetries
+    public const int MAXVAL     = 12;
+    public const int CARTVERT   = 5 * MAXVAL + 2; // domain of l_A, u_A, where A is an axle
+    public const int INFTY      = 12;             // the "12" in the definition of limited part
+    public const int MAXOUTLETS = 110;            // max number of outlets
+    public const int MAXSYM     = 50;             // max number of symmetries
     public static readonly int[] U = new int[] {0, 0, 0, 1, 0, 3, 2, 1, 4, 3, 8, 3, 0, 0, 5, 6, 15};
     public static readonly int[] V = new int[] {0, 0, 1, 0, 2, 0, 1, 3, 2, 5, 2, 9, 4, 12, 0, 1, 1};
 
@@ -574,23 +575,23 @@ namespace LibraryCS2 {
       int index = 0;
 
       // posout
-      int[] num = new int[MAXSYM + 1];
-      int[] nol = new int[MAXSYM + 1];
-      int[] val = new int[MAXSYM + 1];
+      int[] num = new int[MAXOUTLETS];
+      int[] nol = new int[MAXOUTLETS];
+      int[] val = new int[MAXOUTLETS];
       int j;
-      int[][] pos = new int[MAXSYM + 1][];
-      for (j = 0; j < MAXSYM + 1; j++) {
+      int[][] pos = new int[MAXOUTLETS][];
+      for (j = 0; j < MAXOUTLETS; j++) {
         pos[j] = new int[17];
       }
-      int[][] low = new int[MAXSYM + 1][];
-      for (j = 0; j < MAXSYM + 1; j++) {
+      int[][] low = new int[MAXOUTLETS][];
+      for (j = 0; j < MAXOUTLETS; j++) {
         low[j] = new int[17];
       }
-      int[][] upp = new int[MAXSYM + 1][];
-      for (j = 0; j < MAXSYM + 1; j++) {
+      int[][] upp = new int[MAXOUTLETS][];
+      for (j = 0; j < MAXOUTLETS; j++) {
         upp[j] = new int[17];
       }
-      int[] xxx = new int[MAXSYM + 1];
+      int[] xxx = new int[MAXOUTLETS];
       LibFS.TpPosout ret = new LibFS.TpPosout(num, nol, val, pos, low, upp, xxx);
 
       // adjmat
@@ -606,12 +607,12 @@ namespace LibraryCS2 {
       // set data
       foreach (LibFS.TpRules2Ret line in retR)
       {
-        /* if ( DoOutlet(axles, line.Z[1], line.Z, line.B, ret, index, -1, adjmat) ) {
+        if ( DoOutlet(axles, line.Z[1], line.Z, line.B, ret, index, -1, adjmat) ) {
           index++;
         }
         if ( DoOutlet(axles, -line.Z[1], line.Z, line.B, ret, index, -1, adjmat) ) {
           index++;
-        } */
+        }
       }
 
       return ret;
