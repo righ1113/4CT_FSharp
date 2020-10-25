@@ -573,25 +573,26 @@ namespace LibraryCS2 {
       LibFS.TpAxle axles)
     {
       int index = 0;
+      int i     = 0;
 
       // posout
-      int[] num = new int[MAXOUTLETS];
-      int[] nol = new int[MAXOUTLETS];
-      int[] val = new int[MAXOUTLETS];
+      int[] num = new int[2 * MAXOUTLETS];
+      int[] nol = new int[2 * MAXOUTLETS];
+      int[] val = new int[2 * MAXOUTLETS];
       int j;
-      int[][] pos = new int[MAXOUTLETS][];
-      for (j = 0; j < MAXOUTLETS; j++) {
+      int[][] pos = new int[2 * MAXOUTLETS][];
+      for (j = 0; j < 2 * MAXOUTLETS; j++) {
         pos[j] = new int[17];
       }
-      int[][] low = new int[MAXOUTLETS][];
-      for (j = 0; j < MAXOUTLETS; j++) {
+      int[][] low = new int[2 * MAXOUTLETS][];
+      for (j = 0; j < 2 * MAXOUTLETS; j++) {
         low[j] = new int[17];
       }
-      int[][] upp = new int[MAXOUTLETS][];
-      for (j = 0; j < MAXOUTLETS; j++) {
+      int[][] upp = new int[2 * MAXOUTLETS][];
+      for (j = 0; j < 2 * MAXOUTLETS; j++) {
         upp[j] = new int[17];
       }
-      int[] xxx = new int[MAXOUTLETS];
+      int[] xxx = new int[2 * MAXOUTLETS];
       LibFS.TpPosout ret = new LibFS.TpPosout(num, nol, val, pos, low, upp, xxx);
 
       // adjmat
@@ -613,6 +614,18 @@ namespace LibraryCS2 {
         if ( DoOutlet(axles, -line.Z[1], line.Z, line.B, ret, index, -1, adjmat) ) {
           index++;
         }
+      }
+
+      // データを2回重ねる
+      for (i = 0; i < index; i++)
+      {
+        ret.number[i + index]  = ret.number[i];
+        ret.nolines[i + index] = ret.nolines[i];
+        ret.value[i + index]   = ret.value[i];
+        ret.pos[i].CopyTo(ret.pos[i + index], 0);
+        ret.plow[i].CopyTo(ret.plow[i + index], 0);
+        ret.pupp[i].CopyTo(ret.pupp[i + index], 0);
+        ret.xx[i + index]      = ret.xx[i];
       }
 
       return ret;

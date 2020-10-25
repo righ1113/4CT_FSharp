@@ -228,7 +228,7 @@ module Di =
       sym.value.[nosym] <- 1
       sym.nolines.[nosym] <- axles.lev + 1
       for i in 0..axles.lev do
-        sym.pos.[nosym].[i] <- nn.[i];
+        sym.pos.[nosym].[i] <- nn.[i]
         if (mm.[i] > 0) then
           sym.plow.[nosym].[i] <- mm.[i]
           sym.pupp.[nosym].[i] <- INFTY
@@ -353,6 +353,10 @@ module Di =
     // TpOutlet & TpPosout
     let rules  = LibFS.readFileRulesD
     let rules2 = LibDischargeReadRule.ReadRuleD(axles)
+    //2つの配列が等しいか調べる
+    for i in 0..(2 * MAXOUTLETS - 1) do
+      if rules.number.[i] <> rules2.number.[i] then
+        printfn "NG."
 
     // sym
     let symNum = Array.zeroCreate (MAXSYM + 1)
