@@ -351,12 +351,8 @@ module Di =
     let mm = Array.replicate MAXLEV 0
 
     // TpOutlet & TpPosout
-    let rules  = LibFS.readFileRulesD
+    let _rules = LibFS.readFileRulesD
     let rules2 = LibDischargeReadRule.ReadRuleD(axles)
-    //2つの配列が等しいか調べる
-    for i in 0..(2 * MAXOUTLETS - 1) do
-      if rules.number.[i] <> rules2.number.[i] then
-        printfn "NG."
 
     // sym
     let symNum = Array.zeroCreate (MAXSYM + 1)
@@ -391,7 +387,7 @@ module Di =
 
     let ret = mainLoop &redpk1
                        &redpk2
-                       rules
+                       rules2
                        (nn, mm)
                        deg
                        sym

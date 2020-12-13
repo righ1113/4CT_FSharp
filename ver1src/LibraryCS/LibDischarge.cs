@@ -608,11 +608,21 @@ namespace LibraryCS2 {
       // set data
       foreach (LibFS.TpRules2Ret line in retR)
       {
-        if ( DoOutlet(axles, line.Z[1], line.Z, line.B, ret, index, -1, adjmat) ) {
-          index++;
-        }
-        if ( DoOutlet(axles, -line.Z[1], line.Z, line.B, ret, index, -1, adjmat) ) {
-          index++;
+        if (line.Comment == "invert")
+        {
+          if ( DoOutlet(axles, line.Z[1], line.Z, line.B, ret, index, -1, adjmat ,V, U) ) {
+            index++;
+          }
+          if ( DoOutlet(axles, -line.Z[1], line.Z, line.B, ret, index, -1, adjmat, V, U) ) {
+            index++;
+          }
+        } else {
+          if ( DoOutlet(axles, line.Z[1], line.Z, line.B, ret, index, -1, adjmat ,U, V) ) {
+            index++;
+          }
+          if ( DoOutlet(axles, -line.Z[1], line.Z, line.B, ret, index, -1, adjmat, U, V) ) {
+            index++;
+          }
         }
       }
 
@@ -632,7 +642,8 @@ namespace LibraryCS2 {
     }
 
     public static bool DoOutlet(
-      LibFS.TpAxle A, int number, int [] z, int [] b, LibFS.TpPosout T, int index, int lineno, LibFS.TpAdjmat adjmat)
+      LibFS.TpAxle A, int number, int [] z, int [] b, LibFS.TpPosout T, int index, int lineno, LibFS.TpAdjmat adjmat,
+      int[] X, int[] Y)
     {
       int i, j, k, u, v, deg;
       int[] phi = new int[17];
@@ -678,8 +689,8 @@ namespace LibraryCS2 {
           continue;
         }
         if (j >= 2) {	/* now computing T->pos[i] */
-          u = phi[U[z[j]]];
-          v = phi[V[z[j]]];
+          u = phi[X[z[j]]];
+          v = phi[Y[z[j]]];
           //if (u < 0 || u > 5 * deg || v < 0 || v > 5 * deg)
           //  Error("Rule references illegal vertex", lineno);
           T.pos[index][i] = phi[z[j]] = adjmat.adj[u][v];
@@ -688,7 +699,7 @@ namespace LibraryCS2 {
         //if (u <= 0 || u > 5 * deg)
         //  Error("Rule uses illegal vertex", lineno);
         if (u <= deg && T.plow[index][i] == T.pupp[index][i])
-          LibDischargeReduce.DoFan(deg, u, A.upp[A.lev][i], adjmat); /* update adjmat */
+          LibDischargeReduce.DoFan(deg, u, T.plow[index][i], adjmat); /* update adjmat */
       }
       /* Condition (T4) is checked in CheckIso */
       return true;
