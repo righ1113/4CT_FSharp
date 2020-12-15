@@ -494,8 +494,8 @@ namespace LibraryCS2 {
     public static LibFS.TpReduceRet Reduce(
       ref LibFS.TpReducePack1 rP1, ref LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
     {
-      rP1.axle.low[0] = axles.low[axles.lev];
-      rP1.axle.upp[0] = axles.upp[axles.lev];
+      Array.Copy(axles.low[axles.lev], rP1.axle.low[0], CARTVERT);
+      Array.Copy(axles.upp[axles.lev], rP1.axle.upp[0], CARTVERT);
       return ReduceSub(ref rP1, ref rP2);
     }
 
@@ -547,7 +547,14 @@ namespace LibraryCS2 {
           Debug.Assert((naxles < MAXASTACK),
             "More than %d elements in axle stack needed\n");
 
+          // コピー
+          if (naxles != 0) {
+            Array.Copy(aStack.axle.low[naxles - 1], aStack.axle.low[naxles], CARTVERT);
+            Array.Copy(aStack.axle.upp[naxles - 1], aStack.axle.upp[naxles], CARTVERT);
+          }
+          // デクリメント
           aStack.axle.upp[naxles][v]--;
+          // インクリメント
           naxles++;
         }
 
