@@ -2,6 +2,7 @@
 
 # 4CT_FSharp
 四色定理をF#に移植したよ  
+Ruby→https://github.com/righ1113/4CT_Ruby  
 
 # 変更履歴
 20/07/12　Reduce, Discharge 二周目終了、Reduce と Discharge の deg=7 は動く  
