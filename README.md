@@ -5,6 +5,7 @@
 Ruby→https://github.com/righ1113/4CT_Ruby  
 
 # 変更履歴
+21/03/21　役目は果たした  
 20/07/12　Reduce, Discharge 二周目終了、Reduce と Discharge の deg=7 は動く  
 20/03/09　Reduce 二周目終了  
 20/02/16　Reduce, Discharge 一周目終了  
