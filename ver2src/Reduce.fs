@@ -173,7 +173,7 @@ module Angles =
   let sameangle = Array.init Const.EDGES (fun _ -> Array.zeroCreate 5)
   let contract  = Array.replicate (Const.EDGES + 1) 0
 
-  let anglesSub2Sub x y c =
+  let private anglesSub2Sub x y c =
     try
       if x <= c then raise (Return 0)
       let d = if angle.[c].[0] >= 4 then 4 else angle.[c].[0] <- angle.[c].[0] + 1; angle.[c].[0]
@@ -189,7 +189,7 @@ module Angles =
     with
     | Return x -> x;
 
-  let anglesSub2 (gConf : int array array) (edgeNo : Const.TpedgeNo) =
+  let private anglesSub2 (gConf : int array array) (edgeNo : Const.TpedgeNo) =
     for v in 1..gConf.[0 + 1].[0] do
       try
         for h in 1..gConf.[v + 2].[0 + 1] do
@@ -211,6 +211,38 @@ module Angles =
       with
       | Break -> ()
     true
+
+  let private anglesSub3 (gConf : int array array) verts ring =
+    let neighbour = Array.replicate Const.MVERTS false
+    // checking that there is a triad
+    try
+      if contract.[0] < 4 then raise (Return 1)
+      let mutable v = ring + 1
+      while v <= verts do
+        try
+          // v is a candidate triad
+          let mutable a = 0
+          let mutable i = 1
+          while i <= gConf.[v + 2].[1] do
+            let u = gConf.[v + 2].[i + 1]
+            try
+              for j in 1..8 do
+                if u = gConf.[2].[j] then begin a <- a + 1; raise Break end
+            with
+            | Break -> ()
+            i <- i + 1
+          if a < 3 then raise Continue
+          if gConf.[v + 2].[0] >= 6 then raise (Return 1)
+          for x in 1..verts               do neighbour[x]                 <- false
+          for y in 1..(gConf.[v + 2].[1]) do neighbour[gConf.[y + 2].[i]] <- true
+          for j in 1..8                   do if not neighbour[gConf.[2].[j]] then raise (Return 1)
+          v <- v + 1
+        with
+        | Continue -> v <- v + 1; ()
+      Debug.Assert((1 = 2), "***  ERROR: CONTRACT HAS NO TRIAD  ***")
+      0 // ここには来ない
+    with
+    | Return x -> x
 
   let run (gConf : int array array) (edgeNo : Const.TpedgeNo) (major : Const.TpGConfMajor) =
     // let edge                = major.edges
@@ -234,8 +266,8 @@ module Angles =
     // findanglesSub2
     anglesSub2 gConf edgeNo |> ignore
     // findanglesSub3
-    // LibReduceAngle.FindanglesSub3 (MVERTS, gConf, contract)
-    (angle, diffangle, sameangle, contract) : Const.TpAngle * Const.TpAngle * Const.TpAngle * int array
+    anglesSub3 gConf major.verts major.ring |> ignore
+    (gConf, edgeNo, angle, diffangle, sameangle, contract) : Const.TpAnglePack
 
 
 
@@ -270,7 +302,7 @@ module Re =
     EdgeNo.run gConf major
 
   let private makeAngle (gConf, (major : Const.TpGConfMajor), edgeNo) =
-    (major, (gConf, edgeNo, Angles.run gConf edgeNo major))
+    (major, Angles.run gConf edgeNo major)
 
   let private makeLive (major, ap) =
     ((0, [|5|]), [|3|], 0, 8y, 0, major, ap, true): Const.TpLiveState
@@ -282,9 +314,9 @@ module Re =
   let private chkCReduce _ = true
 
   let reduce =
-    // Array.forall (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce >> chkCReduce) gConfs
-    let (_, (_, _, ret)) = gConfs.[0] |> (makeGConfMajor >> makeEdgeNo >> makeAngle)
-    ret
+    // gConfs |> Array.forall (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce >> chkCReduce)
+    let (_, (_, _, a, b, c, d)) = gConfs.[0] |> (makeGConfMajor >> makeEdgeNo >> makeAngle)
+    (a, b, c, d)
 
 
 
