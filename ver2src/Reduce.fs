@@ -276,14 +276,36 @@ module MLive =
   // /* computes {\cal C}_0 and stores it in live. That is, computes codes of
   // * colorings of the ring that are not restrictions of tri-colorings of the
   // * free extension. Returns the number of such codes */
-  let isEndFL j c edges ring ncodes extent extentclaim = 1
-  let run live (angle : Const.TpAngle) power (major : Const.TpGConfMajor) =
+  let private isEndFL (j : int byref) (c : int array) (extent : int) (major : Const.TpGConfMajor) =
+    let printStatus ring totalcols (extent : int) extentclaim =
+      printf "\n\n   This has ring-size %d, so there are %d colourings total,\n" ring totalcols
+      printf "   and %d balanced signed matchings.\n" Const.SIMATCHNUMBER.[ring]
+      printf "\n   There are %d colourings that extend to the configuration." extent
+      Debug.Assert((extent = extentclaim), "   *** ERROR31: DISCREPANCY IN NUMBER OF EXTENDING COLOURINGS ***")
+      printf "\n\n            remaining               remaining balanced\n"
+      printf "           colourings               signed matchings\n"
+      printf "\n              %7d" (totalcols - extent)
+      true
+    try
+      c.[j] <- c.[j] <<< 1
+      while c.[j] &&& 8 <> 0 do
+        if j >= major.edges - 1 then
+          printStatus major.ring major.ncodes extent major.claim |> ignore
+          raise (Return (major.ncodes - extent)) // 0 にはならないはず
+        j <- j + 1
+        c.[j] <- c.[j] <<< 1
+      0
+    with
+    | Return x -> x
+  let private chgLive c angle live extent (major : Const.TpGConfMajor) = true
+  let run (angle : Const.TpAngle) power (major : Const.TpGConfMajor) =
     // long j, i, u, ring = gConfMajor["ring"], edges = gConfMajor["edges"], extentclaim = gConfMajor["claim"];
     // long[] am;
     // long extent, bigno = gConfMajor["bigno"], ncodes = gConfMajor["ncodes"], ret;	/* needed in "chgLive" */
     // long[EDGES] c, forbidden;	/* called F in the notes */
     let c = Array.replicate (Const.EDGES) 0
     let forbidden = Array.replicate (Const.EDGES) 0
+    let live = Array.replicate (major.ncodes) 1
     c[major.edges] <- 1
     let mutable j = major.edges - 1
     c[j] <- 2
@@ -292,11 +314,11 @@ module MLive =
     try
       while true do
         while 0 <> (forbidden.[j] &&& c.[j]) do
-          let ret = 1 //isEndFL j c edges ring ncodes extent extentclaim
+          let ret = isEndFL &j c extent major
           if ret <> 0 then raise (Return ret)
         if j = major.ring + 1 then
-          // chgLive c power ring angle live extent bigno |> ignore
-          let ret = 1 //isEndFL j c edges ring ncodes extent extentclaim
+          chgLive c angle live extent major |> ignore
+          let ret = isEndFL &j c extent major
           if ret <> 0 then raise (Return ret)
         else
           j <- j - 1
