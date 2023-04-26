@@ -245,7 +245,6 @@ module Angles =
     | Return x -> x
 
   let run (gConf : int array array) (edgeNo : Const.TpedgeNo) (major : Const.TpGConfMajor) =
-    // let edge                = major.edges
     contract.[0]           <- major.cont0 // number of edges in contract
     contract.[Const.EDGES] <- major.contE
     for i in 1..contract.[0] do
@@ -268,6 +267,49 @@ module Angles =
     // findanglesSub3
     anglesSub3 gConf major.verts major.ring |> ignore
     (gConf, edgeNo, angle, diffangle, sameangle, contract) : Const.TpAnglePack
+
+
+module MLive =
+  exception Continue
+  exception Break
+  exception Return of int
+  // /* computes {\cal C}_0 and stores it in live. That is, computes codes of
+  // * colorings of the ring that are not restrictions of tri-colorings of the
+  // * free extension. Returns the number of such codes */
+  let isEndFL j c edges ring ncodes extent extentclaim = 1
+  let run live (angle : Const.TpAngle) power (major : Const.TpGConfMajor) =
+    // long j, i, u, ring = gConfMajor["ring"], edges = gConfMajor["edges"], extentclaim = gConfMajor["claim"];
+    // long[] am;
+    // long extent, bigno = gConfMajor["bigno"], ncodes = gConfMajor["ncodes"], ret;	/* needed in "chgLive" */
+    // long[EDGES] c, forbidden;	/* called F in the notes */
+    let c = Array.replicate (Const.EDGES) 0
+    let forbidden = Array.replicate (Const.EDGES) 0
+    c[major.edges] <- 1
+    let mutable j = major.edges - 1
+    c[j] <- 2
+    forbidden[j] <- 5
+    let mutable extent = 0
+    try
+      while true do
+        while 0 <> (forbidden.[j] &&& c.[j]) do
+          let ret = 1 //isEndFL j c edges ring ncodes extent extentclaim
+          if ret <> 0 then raise (Return ret)
+        if j = major.ring + 1 then
+          // chgLive c power ring angle live extent bigno |> ignore
+          let ret = 1 //isEndFL j c edges ring ncodes extent extentclaim
+          if ret <> 0 then raise (Return ret)
+        else
+          j <- j - 1
+          let am = angle.[j]
+          c[j] <- 1
+          let mutable u = 0
+          for i = 1 to am.[0] do
+            u <- u ||| c.[am.[i]]
+          forbidden.[j] <- u
+      0 // ここには来ない
+    with
+    | Return x -> x
+
 
 
 
