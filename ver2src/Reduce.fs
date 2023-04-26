@@ -1,6 +1,6 @@
 namespace Reduce
 
-open System
+// open System
 open System.IO
 open System.Diagnostics
 open FSharp.Data
@@ -21,8 +21,6 @@ module Const =
   type TpGConfMajor  = {verts: int; ring: int; term: int; edges: int; claim: int; cont0: int; contE: int; bigno: int; ncodes: int; nchar: int;}
   type TpAnglePack   = int array array * TpedgeNo * TpAngle * TpAngle * TpAngle * int array
   type TpLiveTwin    = int * int array
-  //type TpRingNchar     = (Int, Int)
-  //type TpUpdateState   = (TpLiveTwin, [Int], Int, Int8, Int)
   type TpLiveState   = TpLiveTwin * int array * int * int8 * int * TpGConfMajor * TpAnglePack * bool
 
   type TpConfFmt     = JsonProvider<"[[[1]]]">
@@ -36,23 +34,20 @@ module EdgeNo =
     try
       let d = grav.[1] in
       let mutable first = 1 in
-      while first < d && not don.[grav.[first + 1]] do first <- first + 1 done;
+      while first < d && not don.[grav.[first + 1]] do first <- first + 1
       if first = d then raise (Return (if don.[grav.[d + 1]] then 1 else 0));
       let mutable last = first in
-      while last < d && don.[grav.[last + 2]] do last <- last + 1 done;
+      while last < d && don.[grav.[last + 2]] do last <- last + 1
       let mutable length = last - first + 1 in
       if last  = d then raise (Return length);
       if first > 1 then
-        begin
-          for j = last + 2 to d do if don.[grav.[j + 1]] then raise (Return 0); done;
-          raise (Return length)
-        end;
+        for j = last + 2 to d do if don.[grav.[j + 1]] then raise (Return 0)
+        raise (Return length)
       let mutable worried = false in
       for j = last + 2 to d do
-        if don.[grav.[j + 1]] then begin length <- length + 1; worried <- true end
-        else if worried then raise (Return 0);
-      done;
-      length;
+        if don.[grav.[j + 1]] then length <- length + 1; worried <- true
+        else if worried then raise (Return 0)
+      length
     with
     | Return x -> x;
   // 1. strip()
@@ -83,51 +78,41 @@ module EdgeNo =
           if done0.[v] then raise Continue;
           let inter = inInterval gConf.[v + 2] done0 in
           if inter > maxint then
-            begin maxint <- inter; maxes <- 1; max.[1] <- v end
+            maxint <- inter; maxes <- 1; max.[1] <- v
           else
-            if inter = maxint then begin maxes <- maxes + 1; max.[maxes] <- v end
+            if inter = maxint then maxes <- maxes + 1; max.[maxes] <- v
         with
         | Continue -> ()
-      done;
       let mutable maxdeg = 0
       (* 2_2. *)
       for h = 1 to maxes do
         let d = gConf.[max.[h] + 2].[1] in
-        if d > maxdeg then begin maxdeg <- d; best <- max.[h] end
-      done;
+        if d > maxdeg then maxdeg <- d; best <- max.[h]
       let grav = gConf.[best + 2] in
       let d = grav.[1]
       let mutable first = 1
       let mutable previous = done0.[grav.[d + 1]]
       (* 2_3. *)
-      begin
-        try
-          while previous || not done0.[grav.[first + 1]] do
-            previous <- done0.[grav.[first + 1]]
-            first    <- first + 1;
-            if first > d then begin first <- 1; raise Break; end
-          done
-        with
-        | Break -> ()
-      end;
+      try
+        while previous || not done0.[grav.[first + 1]] do
+          previous <- done0.[grav.[first + 1]]
+          first    <- first + 1;
+          if first > d then first <- 1; raise Break
+      with
+      | Break -> ()
       let mutable h = first
       (* 2_4. *)
-      begin
-        try
-          while done0.[grav.[h + 1]] do
-            edgeNo.[best].[grav.[h+1]] <- term
-            edgeNo.[grav.[h+1]].[best] <- term
-            term <- term - 1
-            if h = d then
-              begin
-                if first = 1 then raise Break;
-                h <- 0
-              end;
-            h <- h + 1
-          done;
-        with
-        | Break -> ()
-      end;
+      try
+        while done0.[grav.[h + 1]] do
+          edgeNo.[best].[grav.[h+1]] <- term
+          edgeNo.[grav.[h+1]].[best] <- term
+          term <- term - 1
+          if h = d then
+            if first = 1 then raise Break
+            h <- 0
+          h <- h + 1
+      with
+      | Break -> ()
       done0.[best] <- true
 
     // stripSub3
@@ -143,7 +128,7 @@ module EdgeNo =
           let doneIntU = if done0.[u] then 1     else 0
           let doneIntW = if done0.[w] then 1     else 0
           let inter    = 3 * gConf.[v+2].[1] + 4 * (doneIntU + doneIntW)
-          if inter > maxint then begin maxint <- inter; best <- v end
+          if inter > maxint then maxint <- inter; best <- v
         with
         | Continue -> ()
       let grav = gConf.[best+2]
@@ -227,7 +212,7 @@ module Angles =
             let u = gConf.[v + 2].[i + 1]
             try
               for j in 1..8 do
-                if u = gConf.[2].[j] then begin a <- a + 1; raise Break end
+                if u = gConf.[2].[j] then a <- a + 1; raise Break
             with
             | Break -> ()
             i <- i + 1
@@ -270,8 +255,6 @@ module Angles =
 
 
 module MLive =
-  exception Continue
-  exception Break
   exception Return of int
   // /* computes {\cal C}_0 and stores it in live. That is, computes codes of
   // * colorings of the ring that are not restrictions of tri-colorings of the
@@ -297,41 +280,55 @@ module MLive =
       0
     with
     | Return x -> x
-  let private chgLive c angle live extent (major : Const.TpGConfMajor) = true
-  let run (angle : Const.TpAngle) power (major : Const.TpGConfMajor) =
-    // long j, i, u, ring = gConfMajor["ring"], edges = gConfMajor["edges"], extentclaim = gConfMajor["claim"];
-    // long[] am;
-    // long extent, bigno = gConfMajor["bigno"], ncodes = gConfMajor["ncodes"], ret;	/* needed in "chgLive" */
-    // long[EDGES] c, forbidden;	/* called F in the notes */
+  let private chgLive
+      (col : int array) (angle : Const.TpAngle) (live : int array) (extent : int byref) (major : Const.TpGConfMajor) =
+    let weight = Array.replicate 5 0
+    for i = 1 to major.ring do
+      let sum = 7 - col.[angle.[i].[1]] - col.[angle.[i].[2]]
+      weight.[sum] <- weight.[sum] + Const.POWER.[i]
+    let mutable min = weight.[4]
+    let mutable max = weight.[4]
+    for i = 1 to 2 do
+      let w = weight.[i]
+      if w < min then min <- w
+      else if w > max then max <- w
+    let colno = major.bigno - 2 * min - max
+    if live.[colno] <> 0 then extent <- extent + 1; live.[colno] <- 0
+    true
+  let run (angle : Const.TpAngle) (major : Const.TpGConfMajor) =
     let c = Array.replicate (Const.EDGES) 0
     let forbidden = Array.replicate (Const.EDGES) 0
     let live = Array.replicate (major.ncodes) 1
     c[major.edges] <- 1
     let mutable j = major.edges - 1
+    // printfn "aaa: %d" j
     c[j] <- 2
     forbidden[j] <- 5
     let mutable extent = 0
-    try
-      while true do
-        while 0 <> (forbidden.[j] &&& c.[j]) do
-          let ret = isEndFL &j c extent major
-          if ret <> 0 then raise (Return ret)
-        if j = major.ring + 1 then
-          chgLive c angle live extent major |> ignore
-          let ret = isEndFL &j c extent major
-          if ret <> 0 then raise (Return ret)
-        else
-          j <- j - 1
-          let am = angle.[j]
-          c[j] <- 1
-          let mutable u = 0
-          for i = 1 to am.[0] do
-            u <- u ||| c.[am.[i]]
-          forbidden.[j] <- u
-      0 // ここには来ない
-    with
-    | Return x -> x
-
+    let y =
+      try
+        while true do
+          while 0 <> (forbidden.[j] &&& c.[j]) do
+            let ret = isEndFL &j c extent major
+            // printfn "bbb: %d" j
+            if ret <> 0 then raise (Return ret)
+          if j = major.ring + 1 then
+            chgLive c angle live &extent major |> ignore
+            // printfn "ccc: %d" j
+            let ret = isEndFL &j c extent major
+            if ret <> 0 then raise (Return ret)
+          else
+            j <- j - 1
+            // printfn "ddd: %d" j
+            let am = angle.[j]
+            c[j] <- 1
+            let mutable u = 0
+            for i = 1 to am.[0] do u <- u ||| c.[am.[i]]
+            forbidden.[j] <- u
+        0 // ここには来ない
+      with
+      | Return x -> x
+    (y, live)
 
 
 
@@ -369,9 +366,10 @@ module Re =
     (major, Angles.run gConf edgeNo major)
 
   let private makeLive (major, ap) =
-    ((0, [|5|]), [|3|], 0, 8y, 0, major, ap, true): Const.TpLiveState
+    let (_, _, an, _, _, _) = ap
+    (MLive.run an major, [|3|], 0, 8y, 0, major, ap, true): Const.TpLiveState
 
-  let private chkDReduce: Const.TpLiveState -> Const.TpLiveState =
+  let private chkDReduce : Const.TpLiveState -> Const.TpLiveState =
     let p (_, _, _, _, _, _, _, b) = b
     until p (DReduce.testMatch >> DReduce.updateLive)
 
@@ -379,8 +377,8 @@ module Re =
 
   let reduce =
     // gConfs |> Array.forall (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce >> chkCReduce)
-    let (_, (_, _, a, b, c, d)) = gConfs.[0] |> (makeGConfMajor >> makeEdgeNo >> makeAngle)
-    (a, b, c, d)
+    let (liveTwin, _, _, _, _, _, _, _) = gConfs.[0] |> (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive)
+    liveTwin
 
 
 
