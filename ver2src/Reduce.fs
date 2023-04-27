@@ -21,7 +21,7 @@ module Const =
   type TpGConfMajor  = {verts: int; ring: int; term: int; edges: int; claim: int; cont0: int; contE: int; bigno: int; ncodes: int; nchar: int;}
   type TpAnglePack   = int array array * TpedgeNo * TpAngle * TpAngle * TpAngle * int array
   type TpLiveTwin    = int * int array
-  type TpLiveState   = TpLiveTwin * int array * int * int8 * int * TpGConfMajor * TpAnglePack * bool
+  type TpLiveState   = TpLiveTwin * int array * int * int8 * int * TpGConfMajor * TpAnglePack * bool * bool
 
   type TpConfFmt     = JsonProvider<"[[[1]]]">
 
@@ -333,9 +333,31 @@ module MLive =
 
 
 module DReduce =
+  exception Return of int
   let testMatch  = id
-  let updateLive = id
-
+  let updateLive (twin, real, nReal, _, _, (major : Const.TpGConfMajor), d, b1, b2) =
+    let isUpdate ncols (nLive, (live : int array)) nReal =
+      let mutable newnlive = 0
+      let ret =
+        try
+          if live.[0] > 1 then live.[0] <- 15
+          for i = 0 to ncols - 1 do
+            if live.[i] <> 15 then live.[i] <- 0
+            else
+              newnlive <- newnlive + 1; live.[i] <- 1;
+          printf "               %d\n" nReal // right
+          printf "            %9d" newnlive  // left
+          if (newnlive < nLive) && (newnlive > 0) then raise (Return 0)
+          if 0 = newnlive then
+            printf "\n\n\n                  ***  D-reducible  ***\n\n"
+          else
+            printf "\n\n\n                ***  Not D-reducible  ***\n"
+          1
+        with
+        | Return x -> x
+      (1 = ret, 0 = newnlive, (newnlive, live))
+    let (b1, b2, twin2) = isUpdate (major.ncodes) twin nReal
+    (twin2, real, 0, 1y, 0, major, d, true, b2)
 
 module Re =
   let rec private until p f (a: 'a) = if p a then a else until p f (f a)
@@ -367,17 +389,17 @@ module Re =
 
   let private makeLive (major, ap) =
     let (_, _, an, _, _, _) = ap
-    (MLive.run an major, [|3|], 0, 8y, 0, major, ap, true): Const.TpLiveState
+    (MLive.run an major, [|3|], 0, 1y, 0, major, ap, false, false): Const.TpLiveState
 
   let private chkDReduce : Const.TpLiveState -> Const.TpLiveState =
-    let p (_, _, _, _, _, _, _, b) = b
+    let p (_, _, _, _, _, _, _, b1, _) = b1
     until p (DReduce.testMatch >> DReduce.updateLive)
 
   let private chkCReduce _ = true
 
   let reduce =
     // gConfs |> Array.forall (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce >> chkCReduce)
-    let (liveTwin, _, _, _, _, _, _, _) = gConfs.[0] |> (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive)
+    let (liveTwin, _, _, _, _, _, _, _, _) = gConfs.[0] |> (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce)
     liveTwin
 
 
