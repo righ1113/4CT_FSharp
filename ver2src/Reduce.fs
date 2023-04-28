@@ -21,7 +21,7 @@ module Const =
   type TpGConfMajor  = {verts: int; ring: int; term: int; edges: int; claim: int; cont0: int; contE: int; bigno: int; ncodes: int; nchar: int;}
   type TpAnglePack   = int array array * TpedgeNo * TpAngle * TpAngle * TpAngle * int array
   type TpLiveTwin    = int array * int
-  type TpLiveState   = TpLiveTwin * int array * int * int8 * int * TpGConfMajor * TpAnglePack * bool * bool
+  type TpLiveState   = TpLiveTwin * int8 array * int * int8 * int * TpGConfMajor * TpAnglePack * bool * bool
 
   type TpConfFmt     = JsonProvider<"[[[1]]]">
 
@@ -296,9 +296,9 @@ module MLive =
     if live.[colno] <> 0 then extent <- extent + 1; live.[colno] <- 0
     true
   let run (angle : Const.TpAngle) (major : Const.TpGConfMajor) =
-    let c = Array.replicate (Const.EDGES) 0
+    let c         = Array.replicate (Const.EDGES) 0
     let forbidden = Array.replicate (Const.EDGES) 0
-    let live = Array.replicate (major.ncodes) 1
+    let live      = Array.replicate (major.ncodes) 1
     c[major.edges] <- 1
     let mutable j = major.edges - 1
     // printfn "aaa: %d" j
@@ -333,19 +333,116 @@ module MLive =
 
 
 module DReduce =
+  exception Continue
   exception Return of int
   let interval    = Array.replicate 10 0
   let weight      = Array.init 16 (fun _ -> Array.zeroCreate 4)
   let matchweight = Array.init 16 (fun _ -> Array.init 16 (fun _ -> Array.zeroCreate 4))
   let mutable nReal2 = 0
-  let testMatch (twin, real, nReal, bit, realTerm, (major : Const.TpGConfMajor), d, b1, b2) =
+  let mutable bit2 = 1y
+  let mutable realTerm2 = 0
+  let isStillReal col (choice : int array) depth (live : int array) on =
+    let mutable nTwisted = 0
+    let mutable nUnTwisted = 0
+    let mutable twoPower = 1
+    let mutable mark = 1
+    let twisted   = Array.replicate 64 0
+    let unTwisted = Array.replicate 64 0
+    let sum       = Array.replicate 64 0
+    try
+      if col < 0 then
+        // printfn "col1: %d %d" col (Array.length live)
+        if 0 = live.[-col] then raise (Return 0)
+        twisted.[nTwisted] <- -col
+        nTwisted <- nTwisted + 1
+        sum.[0] <- col
+      else
+        // printfn "col2: %d %d" col (Array.length live)
+        if 0 = live.[col] then raise (Return 0)
+        unTwisted.[nUnTwisted] <- col
+        nUnTwisted <- nUnTwisted + 1
+        sum.[0] <- col
+      for i = 2 to depth do
+        for j = 0 to twoPower - 1 do
+          let b = sum.[j] - choice.[i]
+          if b < 0 then
+            if 0 = live.[-b] then raise (Return 0)
+            twisted.[nTwisted] <- -b
+            nTwisted <- nTwisted + 1
+            sum.[mark] <- b
+          else
+            if 0 = live.[b] then raise (Return 0)
+            unTwisted.[nUnTwisted] <- b
+            nUnTwisted <- nUnTwisted + 1
+            sum.[mark] <- b
+          mark <- mark + 1
+        twoPower <- twoPower <<< 1
+      if on then
+        for i = 0 to nTwisted - 1   do live.[twisted.[i]]   <- live.[twisted.[i]]   ||| 8
+        for i = 0 to nUnTwisted - 1 do live.[unTwisted.[i]] <- live.[unTwisted.[i]] ||| 4
+      else
+        for i = 0 to nTwisted - 1   do live.[twisted.[i]]   <- live.[twisted.[i]]   ||| 2
+        for i = 0 to nUnTwisted - 1 do live.[unTwisted.[i]] <- live.[unTwisted.[i]] ||| 2
+      1
+    with
+    | Return x -> x
+
+  let checkReality depth live (real : int8 array) baseCol on (major : Const.TpGConfMajor) =
+    let nBits = 1 <<< (depth - 1)
+    let choice = Array.replicate 8 0
+    for k = 0 to nBits - 1 do
+      try
+        if 0y = bit2 then
+          bit2 <- 1y; realTerm2 <- realTerm2 + 1
+          Debug.Assert((realTerm2 <= major.nchar), "More than entries in real are needed")
+        if 0y = (bit2 &&& real.[realTerm2]) then bit2 <- bit2 <<< 1; raise Continue
+        // printfn "%d %d %d %d" bit2 nBits realTerm2 major.nchar
+        let mutable col    = baseCol
+        let mutable parity = major.ring &&& 1
+        let mutable left   = k
+        for i = 1 to depth - 1 do
+          // /* i.e. if a_i=1, where k=a_1+2a_2+4a_3+... */
+          if 0 <> (left &&& 1) then
+            parity <- parity ^^^ 1; choice.[i] <- weight.[i].[1]; col <- col + weight.[i].[3]
+          else
+                                    choice.[i] <- weight.[i].[0]; col <- col + weight.[i].[2]
+          left <- left >>> 1
+        if 0 <> parity then
+          choice.[depth] <- weight.[depth].[1]; col <- col + weight.[depth].[3]
+        else
+          choice.[depth] <- weight.[depth].[0]; col <- col + weight.[depth].[2]
+        if 0 = isStillReal col choice depth live on then real.[realTerm2] <- real.[realTerm2] ^^^ bit2
+        else nReal2 <- nReal2 + 1
+        bit2 <- bit2 <<< 1
+      with
+      | Continue -> ()
+    true
+  let rec augment n (interval2 : int array) depth live real baseCol on major =
+    // printfn "depth: %d" depth
+    checkReality depth live real baseCol on major |> ignore
+    let mutable newN = 0
+    let newInterval = Array.replicate 10 0
+    for r = 1 to n do
+      let lower = interval2.[2 * r - 1]
+      let upper = interval2.[2 * r]
+      for i = lower + 1 to upper do
+        for j = lower to i - 1 do
+          for h = 0 to 3 do weight.[depth + 1].[h] <- matchweight.[i].[j].[h]
+          for h = 1 to 2 * r - 2 do newInterval.[h] <- interval2.[h]
+          let mutable h = 2 * r - 1
+          newN <- r - 1
+          if j > lower + 1 then newN <- newN + 1; newInterval.[h] <- lower; h <- h + 1; newInterval.[h] <- j - 1; h <- h + 1;
+          if i > j + 1     then newN <- newN + 1; newInterval.[h] <- j + 1; h <- h + 1; newInterval.[h] <- i - 1
+          augment newN newInterval (depth + 1) live real baseCol on major |> ignore
+    true
+  let testMatch ((live, nLive), real, nReal, bit, realTerm, (major : Const.TpGConfMajor), d, b1, b2) =
     // long dReduceTestMatch(long ring, ref byte[] real2, long[] power, ref byte[] live, long nbyte) pure {
-    // long a, b, n, nReal, realterm;
-    // byte bit;
     // /* "nReal" will be the number of balanced signed matchings such that all associated colourings belong to "live",
     // * ie the total number of nonzero bits in the entries of "real" */
-    // nReal = 0; bit = 1; realterm = 0;
     let mutable n = 0
+    nReal2    <- nReal
+    bit2      <- bit
+    realTerm2 <- realTerm
     // /* First, it generates the matchings not incident with the last ring edge */
     for a = 2 to major.ring do
       for b = 1 to a - 1 do
@@ -355,10 +452,11 @@ module DReduce =
         matchweight.[a].[b].[3] <-      Const.POWER.[a] - Const.POWER.[b];
     for a = 2 to major.ring - 1 do
       for b = 1 to a - 1 do
-        n <- 0; weight.[1] <- matchweight.[a].[b]
+        n <- 0;
+        for h = 0 to 3 do weight.[1].[h] <- matchweight.[a].[b].[h]
         if b >= 3 then     n <- 1;     interval.[1] <- 1;             interval.[2]     <- b - 1
         if a >= b + 3 then n <- n + 1; interval.[2 * n - 1] <- b + 1; interval.[2 * n] <- a - 1
-        // augment(n, interval, 1L, weight, matchweight, live, real2, nReal, ring, 0L, 0L, bit, realterm, nbyte);
+        augment n interval 1 live real 0 false major |> ignore
     // /* now, the matchings using an edge incident with "ring" */
     for a = 2 to major.ring do
       for b = 1 to a - 1 do
@@ -367,14 +465,14 @@ module DReduce =
         matchweight.[a].[b].[2] <- -Const.POWER.[a] -     Const.POWER.[b];
         matchweight.[a].[b].[3] <- -Const.POWER.[a] - 2 * Const.POWER.[b];
     for b = 1 to major.ring - 1 do
-      n <- 0; weight.[1] <- matchweight.[major.ring].[b]
+      n <- 0;
+      for h = 0 to 3 do weight.[1].[h] <- matchweight.[major.ring].[b].[h]
       if b >= 3 then              n <- 1;     interval.[1] <- 1;             interval.[2]     <- b - 1
       if major.ring >= b + 3 then n <- n + 1; interval.[2 * n - 1] <- b + 1; interval.[2 * n] <- major.ring - 1
-      // augment(n, interval, 1L, weight, matchweight, live, real2, nReal, ring,
-      //   (power[ring + 1] - 1) / 2, 1L, bit, realterm, nbyte);
-    (twin, real, nReal2, bit, realTerm, major, d, b1, b2)
+      augment n interval 1 live real ((Const.POWER.[major.ring + 1] - 1) / 2) true major |> ignore
+    ((live, nLive), real, nReal2, bit, realTerm, major, d, b1, b2)
 
-  let updateLive (twin, real, nReal, _, _, (major : Const.TpGConfMajor), d, b1, b2) =
+  let updateLive (twin, real, nReal, _, _, (major : Const.TpGConfMajor), ap, _, _) =
     let isUpdate ncols ((live : int array), nLive) nReal =
       let mutable newnlive = 0
       let ret =
@@ -396,7 +494,7 @@ module DReduce =
         | Return x -> x
       (1 = ret, 0 = newnlive, (live, newnlive))
     let (b1, b2, twin2) = isUpdate (major.ncodes) twin nReal
-    (twin2, real, 0, 1y, 0, major, d, true, b2)
+    (twin2, real, 0, 1y, 0, major, ap, b1, b2)
 
 module Re =
   let rec private until p f (a: 'a) = if p a then a else until p f (f a)
@@ -428,7 +526,7 @@ module Re =
 
   let private makeLive ((major : Const.TpGConfMajor), ap) =
     let (_, _, an, _, _, _) = ap
-    let real = Array.replicate (Const.SIMATCHNUMBER[major.ring] / 8 + 1) -1
+    let real = Array.replicate (Const.SIMATCHNUMBER[Const.MAXRING] / 8 + 1) -1y
     (MLive.run an major, real, 0, 1y, 0, major, ap, false, false): Const.TpLiveState
 
   let private chkDReduce : Const.TpLiveState -> Const.TpLiveState =
@@ -439,8 +537,8 @@ module Re =
 
   let reduce =
     // gConfs |> Array.forall (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce >> chkCReduce)
-    let (liveTwin, _, _, _, _, _, _, _, _) = gConfs.[0] |> (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce)
-    liveTwin
+    let (liveTwin, _, _, _, _, _, _, b1, b2) = gConfs.[0] |> (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce)
+    (b1, b2)
 
 
 
