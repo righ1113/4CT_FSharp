@@ -35,6 +35,16 @@ module Apply =
       sym.value.[ii]
     with
     | Return x -> x
+  let outletPermitted deg (ax : Const.TpAxle) (sym : Const.TpPosout) ii xx =
+    try
+      let x = xx - 1
+      for i = 0 to sym.nolines.[ii] - 1 do
+        let mutable p = sym.pos.[ii].[i];
+        p <- if x + (p - 1) % deg < deg then p + x else p + x - deg
+        if sym.plow.[ii].[i] > ax.upp.[ax.lev].[p] || sym.pupp.[ii].[i] < ax.low.[ax.lev].[p] then raise (Return 0)
+      sym.value.[ii]
+    with
+    | Return x -> x
   let reflForced deg (ax : Const.TpAxle) (sym : Const.TpPosout) ii xx =
     try
       let x = xx - 1
@@ -136,23 +146,35 @@ module CaseSplit =
 
 
 module Dischg =
+  exception Continue
   let private readFileRulesD =
     let ind = Const.TpDiRules.Parse <| File.ReadAllText "data/DiRules07.txt"
     {number = ind.A; nolines = ind.B; value = ind.C; pos = ind.D; plow = ind.E; pupp = ind.F; xx = ind.G} : Const.TpPosout
   let posout = readFileRulesD
-  let private dischgCoreSub1 _ _ _ (forcedch: int) (allowedch: int) s0 =
-    (forcedch, allowedch, s0)
   let rec private dischgCoreSub5 _ _ _ _ _ _ _ _ = true
-  and private dischgCore (deg: int) (ax: Const.TpAxle) s0 (maxch: int) (pos: int) (depth: int) =
+  and private dischgCore deg (ax: Const.TpAxle) (s : int array) maxch pos depth =
     // 1. compute forced and permitted rules, allowedch, forcedch, update s
-    let (forcedch, allowedch, s) = dischgCoreSub1 deg (ax.low.[ax.lev], ax.upp.[ax.lev]) 0 0 0 s0
+    // let (forcedch, allowedch, s) = dischgCoreSub1 deg (ax.low.[ax.lev], ax.upp.[ax.lev]) 0 0 0 s0
     //liftIO $ printf "f, a = %d, %d\n" forcedch allowedch
+    let mutable forcedch = 0
+    let mutable allowedch = 0
+    let mutable i = 0
+    while s.[i] < 99 do
+      try
+        if   s.[i] > 0           then forcedch <- forcedch + posout.value[i]
+        if   s.[i] <> 0          then i <- i + 1; raise Continue
+        if   0 <> Apply.outletForced    deg ax posout i posout.xx.[i] then s.[i] <-  1; forcedch <- forcedch + posout.value[i]
+        elif 0 =  Apply.outletPermitted deg ax posout i posout.xx.[i] then s.[i] <- -1
+        elif posout.value[i] > 0 then allowedch <- allowedch + posout.value.[i]
+        i <- i + 1
+      with
+      | Continue -> ()
     // 2. print omitted
     // liftIO $ printf "%d POs: " depth
     // liftIO $ dischargeCoreSub2 0 s rules posoutX
     // 3. check if inequality holds
     if forcedch + allowedch <= maxch then
-      printfn "%d Inequality holds. Case done." depth
+      printfn "1 %d Inequality holds. Case done." depth
       () // true end
     elif forcedch > maxch then // 4. check reducibility
       // lift $ put (((aSLow & ix 0 .~ axLowL, aSUpp & ix 0 .~ axUppL, aSLev), used, image, adjmat, edgelist), posoutX)
@@ -162,10 +184,10 @@ module Dischg =
       // else do
       //   liftIO $ printf "%d, %d, %d Reducible. Case done.\n" forcedch allowedch maxch
       //   empty -- true end
-      printfn "%d reduce done." depth
+      printfn "2 %d reduce done." depth
       () // true end
     elif dischgCoreSub5 deg (ax.low.[ax.lev], ax.upp.[ax.lev]) forcedch allowedch s maxch pos depth then // 5.
-      printfn "%d dischgCoreSub5() done." depth
+      printfn "3 %d dischgCoreSub5() done." depth
       () // true end
     else
       // 6. error
@@ -202,7 +224,7 @@ module Dischg =
     // 4. omitted
     // 5.
     for i in 1..x.[0] do
-      printfn "\n-->Checking hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]
+      printfn "-->Checking hubcap member (%d,%d,%d)" x.[i] y.[i] v.[i]
       printf ""
       for j in 0..(nouts-1) do
         posout.xx.[j] <- x.[i]
@@ -215,7 +237,7 @@ module Dischg =
       else
         s.[nouts] <- 99 // to indicate end of list
       dischgCore deg ax s v.[i] 0 0
-    printfn ""
+    // printfn ""
     ()
 
 
