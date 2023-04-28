@@ -24,12 +24,33 @@ module Const =
 
 
 module Apply =
-  let outletForced _ _ _ _ _ _ _ _ _ = 1
-  let reflForced   _ _ _ _ _ _ _ _ _ = 1
-  let run (strL : string list)
-          (ax : Const.TpAxle)
-          (sym : Const.TpPosout)
-          (nosym: int) =
+  exception Return of int
+  let outletForced deg (ax : Const.TpAxle) (sym : Const.TpPosout) ii xx =
+    try
+      let x = xx - 1
+      for i = 0 to sym.nolines.[ii] - 1 do
+        let mutable p = sym.pos.[ii].[i];
+        p <- if x + (p - 1) % deg < deg then p + x else p + x - deg
+        if sym.plow.[ii].[i] > ax.low.[ax.lev].[p] || sym.pupp.[ii].[i] < ax.upp.[ax.lev].[p] then raise (Return 0)
+      sym.value.[ii]
+    with
+    | Return x -> x
+  let reflForced deg (ax : Const.TpAxle) (sym : Const.TpPosout) ii xx =
+    try
+      let x = xx - 1
+      for i = 0 to sym.nolines.[ii] - 1 do
+        let mutable q = 0
+        let mutable p = sym.pos.[ii].[i];
+        p <- if x + (p - 1) % deg < deg then p + x else p + x - deg
+        if p < 1 || p > 2 * deg then raise (Return 0)
+        elif p <= deg           then q <- deg - p + 1
+        elif p < 2 * deg        then q <- 3 * deg - p
+        else                         q <- 2 * deg
+        if sym.plow.[ii].[i] > ax.low.[ax.lev].[q] || sym.pupp.[ii].[i] < ax.upp.[ax.lev].[q] then raise (Return 0)
+      sym.value.[ii]
+    with
+    | Return x -> x
+  let run deg (strL : string list) (ax : Const.TpAxle) (sym : Const.TpPosout) nosym =
     let k       = int (Int32.Parse strL.[0])
     let epsilon = int (Int32.Parse strL.[1])
     let level   = int (Int32.Parse strL.[2])
@@ -42,11 +63,9 @@ module Apply =
     Debug.Assert((i < nosym),                   "No symmetry as requested")
     Debug.Assert((sym.nolines.[i] = level + 1), "Level mismatch")
     if epsilon = 0 then
-      Debug.Assert((outletForced ax.low.[ax.lev] ax.upp.[ax.lev] sym.number.[i] sym.nolines.[i] sym.value.[i] sym.pos.[i] sym.plow.[i] sym.pupp.[i] (k+1) = 1),
-        "Invalid symmetry")
+      Debug.Assert((0 <> outletForced deg ax sym i (k+1)), "Invalid symmetry")
     else
-      Debug.Assert((reflForced ax.low.[ax.lev] ax.upp.[ax.lev] sym.number.[i] sym.nolines.[i] sym.value.[i] sym.pos.[i] sym.plow.[i] sym.pupp.[i] (k+1) = 1),
-        "Invalid reflected symmetry")
+      Debug.Assert((0 <> reflForced deg ax sym i (k+1)),   "Invalid reflected symmetry")
     printfn "  checkSymmetry OK."
     ()
 
@@ -135,7 +154,7 @@ module Dischg =
     if forcedch + allowedch <= maxch then
       printfn "%d Inequality holds. Case done." depth
       () // true end
-    else if forcedch > maxch then // 4. check reducibility
+    elif forcedch > maxch then // 4. check reducibility
       // lift $ put (((aSLow & ix 0 .~ axLowL, aSUpp & ix 0 .~ axUppL, aSLev), used, image, adjmat, edgelist), posoutX)
       // ret <- (lift . runMaybeT . reduce) 1
       // if isNothing ret then
@@ -145,7 +164,7 @@ module Dischg =
       //   empty -- true end
       printfn "%d reduce done." depth
       () // true end
-    else if dischgCoreSub5 deg (ax.low.[ax.lev], ax.upp.[ax.lev]) forcedch allowedch s maxch pos depth then // 5.
+    elif dischgCoreSub5 deg (ax.low.[ax.lev], ax.upp.[ax.lev]) forcedch allowedch s maxch pos depth then // 5.
       printfn "%d dischgCoreSub5() done." depth
       () // true end
     else
@@ -229,7 +248,7 @@ module Di =
   let private apply x =
     match x with
     | (deg, (ax : Const.TpAxle), (_ :: "S" :: strL) :: tailTac, lineCnt) ->
-        Apply.run strL ax CaseSplit.sym CaseSplit.nosym; CaseSplit.downNosym ax.lev
+        Apply.run deg strL ax CaseSplit.sym CaseSplit.nosym; CaseSplit.downNosym ax.lev
         (deg, {ax with lev = ax.lev - 1}, tailTac, lineCnt + 1)
     | _ -> x
   let private dischg x =
