@@ -147,11 +147,58 @@ module CaseSplit =
 
 module Dischg =
   exception Continue
+  exception Return of int
   let private readFileRulesD =
     let ind = Const.TpDiRules.Parse <| File.ReadAllText "data/DiRules07.txt"
     {number = ind.A; nolines = ind.B; value = ind.C; pos = ind.D; plow = ind.E; pupp = ind.F; xx = ind.G} : Const.TpPosout
   let posout = readFileRulesD
-  let rec private dischgCoreSub5 _ _ _ _ _ _ _ _ = true
+  let rec private dischgCoreSub5 deg (ax : Const.TpAxle) forcedch allowedch (s : int array) maxch pos0 depth =
+    try
+      let mutable pos = pos0
+      let mutable allowedch2 = allowedch
+      while s.[pos] < 99 do
+        try
+          if s.[pos] <> 0 || posout.value.[pos] < 0 then pos <- pos + 1; raise Continue
+          // /* accepting positioned outlet PO, computing AA */
+          let x = posout.xx.[pos]
+          let axles0    = Array.init Const.MAXLEV (fun _ -> Array.zeroCreate Const.CARTVERT)
+          let axlesLow0 = Array.take Const.CARTVERT (Array.concat [| [|deg|]; (Array.create (5*deg) 5);           (Array.replicate 1000 0) |])
+          let axlesUpp0 = Array.take Const.CARTVERT (Array.concat [| [|deg|]; (Array.create (5*deg) Const.INFTY); (Array.replicate 1000 0) |])
+          let axlesLow  = Array.append [|axlesLow0|] axles0
+          let axlesUpp  = Array.append [|axlesUpp0|] axles0
+          let ax2 = {low = axlesLow; upp = axlesUpp; lev = ax.lev} : Const.TpAxle
+          ax2.low.[ax2.lev] <- Array.copy ax.low.[ax.lev]
+          ax2.upp.[ax2.lev] <- Array.copy ax.upp.[ax.lev]
+          for i = 0 to posout.nolines.[pos] - 1 do
+            let mutable p = posout.pos.[pos].[i]
+            p <- if x - 1 + (p - 1) % deg < deg then p + x - 1 else p + x - 1 - deg
+            if (posout.plow.[pos].[i] > ax2.low.[ax2.lev].[p]) then ax2.low.[ax2.lev].[p] <- posout.plow.[pos].[i]
+            if (posout.pupp.[pos].[i] < ax2.upp.[ax2.lev].[p]) then ax2.upp.[ax2.lev].[p] <- posout.pupp.[pos].[i]
+            Debug.Assert((ax2.low.[ax2.lev].[p] <= ax2.upp.[ax2.lev].[p]), "Unexpected error 321")
+          // /* Check if a previously rejected positioned outlet is forced to apply */
+          let mutable good = true
+          for i = 0 to pos - 1 do
+            if s.[i] = -1 && 0 <> Apply.outletForced deg ax2 posout i posout.xx.[i] then good <- false
+          if good then
+            // recursion with PO forced
+            let mutable sPrime = Array.replicate (Array.length s) 0
+            sPrime <- Array.copy s
+            sPrime.[pos] <- 1
+            // if (print >= 3) { writef("Starting recursion with "); writef(",%d forced\n", x); }
+            dischgCore deg ax2 sPrime maxch (pos + 1) (depth + 1)
+          // /* rejecting positioned outlet PO */
+          // if (print >= 3) { writef("Rejecting positioned outlet "); writef(",%d. ", x); }
+          s[pos] <- -1
+          allowedch2 <- allowedch2 - posout.value.[pos]
+          if allowedch2 + forcedch <= maxch then
+            // if (print >= 3) writef("Inequality holds.\n");
+            raise (Return 1) // ★★★ ここから脱出するしかない
+          pos <- pos + 1
+        with
+        | Continue -> ()
+      0
+    with
+    | Return x -> x
   and private dischgCore deg (ax: Const.TpAxle) (s : int array) maxch pos depth =
     // 1. compute forced and permitted rules, allowedch, forcedch, update s
     // let (forcedch, allowedch, s) = dischgCoreSub1 deg (ax.low.[ax.lev], ax.upp.[ax.lev]) 0 0 0 s0
@@ -161,11 +208,11 @@ module Dischg =
     let mutable i = 0
     while s.[i] < 99 do
       try
-        if   s.[i] > 0           then forcedch <- forcedch + posout.value[i]
+        if   s.[i] > 0           then forcedch <- forcedch + posout.value.[i]
         if   s.[i] <> 0          then i <- i + 1; raise Continue
-        if   0 <> Apply.outletForced    deg ax posout i posout.xx.[i] then s.[i] <-  1; forcedch <- forcedch + posout.value[i]
+        if   0 <> Apply.outletForced    deg ax posout i posout.xx.[i] then s.[i] <-  1; forcedch <- forcedch + posout.value.[i]
         elif 0 =  Apply.outletPermitted deg ax posout i posout.xx.[i] then s.[i] <- -1
-        elif posout.value[i] > 0 then allowedch <- allowedch + posout.value.[i]
+        elif posout.value.[i] > 0 then allowedch <- allowedch + posout.value.[i]
         i <- i + 1
       with
       | Continue -> ()
@@ -186,7 +233,7 @@ module Dischg =
       //   empty -- true end
       printfn "2 %d reduce done." depth
       () // true end
-    elif dischgCoreSub5 deg (ax.low.[ax.lev], ax.upp.[ax.lev]) forcedch allowedch s maxch pos depth then // 5.
+    elif 0 <> dischgCoreSub5 deg ax forcedch allowedch s maxch pos depth then // 5.
       printfn "3 %d dischgCoreSub5() done." depth
       () // true end
     else
