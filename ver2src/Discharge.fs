@@ -23,63 +23,6 @@ module Const =
   type TpDiRules  = JsonProvider<"""{"a":[0], "b":[0], "c":[8], "d":[[6]], "e":[[6]], "f":[[6]], "g":[6]}""">
 
 
-module Apply =
-  exception Return of int
-  let outletForced deg (ax : Const.TpAxle) (sym : Const.TpPosout) ii xx =
-    try
-      let x = xx - 1
-      for i = 0 to sym.nolines.[ii] - 1 do
-        let mutable p = sym.pos.[ii].[i];
-        p <- if x + (p - 1) % deg < deg then p + x else p + x - deg
-        if sym.plow.[ii].[i] > ax.low.[ax.lev].[p] || sym.pupp.[ii].[i] < ax.upp.[ax.lev].[p] then raise (Return 0)
-      sym.value.[ii]
-    with
-    | Return x -> x
-  let outletPermitted deg (ax : Const.TpAxle) (sym : Const.TpPosout) ii xx =
-    try
-      let x = xx - 1
-      for i = 0 to sym.nolines.[ii] - 1 do
-        let mutable p = sym.pos.[ii].[i];
-        p <- if x + (p - 1) % deg < deg then p + x else p + x - deg
-        if sym.plow.[ii].[i] > ax.upp.[ax.lev].[p] || sym.pupp.[ii].[i] < ax.low.[ax.lev].[p] then raise (Return 0)
-      sym.value.[ii]
-    with
-    | Return x -> x
-  let reflForced deg (ax : Const.TpAxle) (sym : Const.TpPosout) ii xx =
-    try
-      let x = xx - 1
-      for i = 0 to sym.nolines.[ii] - 1 do
-        let mutable q = 0
-        let mutable p = sym.pos.[ii].[i];
-        p <- if x + (p - 1) % deg < deg then p + x else p + x - deg
-        if p < 1 || p > 2 * deg then raise (Return 0)
-        elif p <= deg           then q <- deg - p + 1
-        elif p < 2 * deg        then q <- 3 * deg - p
-        else                         q <- 2 * deg
-        if sym.plow.[ii].[i] > ax.low.[ax.lev].[q] || sym.pupp.[ii].[i] < ax.upp.[ax.lev].[q] then raise (Return 0)
-      sym.value.[ii]
-    with
-    | Return x -> x
-  let run deg (ax : Const.TpAxle) (strL : string list) (sym : Const.TpPosout) nosym =
-    let k       = int (Int32.Parse strL.[0])
-    let epsilon = int (Int32.Parse strL.[1])
-    let level   = int (Int32.Parse strL.[2])
-    let line    = int (Int32.Parse strL.[3])
-    let i       = Array.findIndex (fun (x: int) -> x = line) sym.number
-    Debug.Assert((k >= 0 &&
-                  k <= Array.head ax.low.[ax.lev] &&
-                  epsilon >= 0 &&
-                  epsilon <= 1),                "Illegal symmetry")
-    Debug.Assert((i < nosym),                   "No symmetry as requested")
-    Debug.Assert((sym.nolines.[i] = level + 1), "Level mismatch")
-    if epsilon = 0 then
-      Debug.Assert((0 <> outletForced deg ax sym i (k+1)), "Invalid symmetry")
-    else
-      Debug.Assert((0 <> reflForced deg ax sym i (k+1)),   "Invalid reflected symmetry")
-    printfn "  checkSymmetry OK."
-    ()
-
-
 module CaseSplit =
   // TpCond
   let private nn = Array.replicate Const.MAXLEV 0
@@ -143,6 +86,63 @@ module CaseSplit =
       printfn "  nosym: %d" nosym; ()
     else
       nosym <- nosym - 1; downNosym lev
+
+
+module Apply =
+  exception Return of int
+  let outletForced deg (ax : Const.TpAxle) (sym : Const.TpPosout) ii xx =
+    try
+      let x = xx - 1
+      for i = 0 to sym.nolines.[ii] - 1 do
+        let mutable p = sym.pos.[ii].[i];
+        p <- if x + (p - 1) % deg < deg then p + x else p + x - deg
+        if sym.plow.[ii].[i] > ax.low.[ax.lev].[p] || sym.pupp.[ii].[i] < ax.upp.[ax.lev].[p] then raise (Return 0)
+      sym.value.[ii]
+    with
+    | Return x -> x
+  let outletPermitted deg (ax : Const.TpAxle) (sym : Const.TpPosout) ii xx =
+    try
+      let x = xx - 1
+      for i = 0 to sym.nolines.[ii] - 1 do
+        let mutable p = sym.pos.[ii].[i];
+        p <- if x + (p - 1) % deg < deg then p + x else p + x - deg
+        if sym.plow.[ii].[i] > ax.upp.[ax.lev].[p] || sym.pupp.[ii].[i] < ax.low.[ax.lev].[p] then raise (Return 0)
+      sym.value.[ii]
+    with
+    | Return x -> x
+  let reflForced deg (ax : Const.TpAxle) (sym : Const.TpPosout) ii xx =
+    try
+      let x = xx - 1
+      for i = 0 to sym.nolines.[ii] - 1 do
+        let mutable q = 0
+        let mutable p = sym.pos.[ii].[i];
+        p <- if x + (p - 1) % deg < deg then p + x else p + x - deg
+        if p < 1 || p > 2 * deg then raise (Return 0)
+        elif p <= deg           then q <- deg - p + 1
+        elif p < 2 * deg        then q <- 3 * deg - p
+        else                         q <- 2 * deg
+        if sym.plow.[ii].[i] > ax.low.[ax.lev].[q] || sym.pupp.[ii].[i] < ax.upp.[ax.lev].[q] then raise (Return 0)
+      sym.value.[ii]
+    with
+    | Return x -> x
+  let run deg (ax : Const.TpAxle) (strL : string list) (sym : Const.TpPosout) nosym =
+    let k       = int (Int32.Parse strL.[0])
+    let epsilon = int (Int32.Parse strL.[1])
+    let level   = int (Int32.Parse strL.[2])
+    let line    = int (Int32.Parse strL.[3])
+    let i       = Array.findIndex (fun (x: int) -> x = line) sym.number
+    Debug.Assert((k >= 0 &&
+                  k <= Array.head ax.low.[ax.lev] &&
+                  epsilon >= 0 &&
+                  epsilon <= 1),                "Illegal symmetry")
+    Debug.Assert((i < nosym),                   "No symmetry as requested")
+    Debug.Assert((sym.nolines.[i] = level + 1), "Level mismatch")
+    if epsilon = 0 then
+      Debug.Assert((0 <> outletForced deg ax sym i (k+1)), "Invalid symmetry")
+    else
+      Debug.Assert((0 <> reflForced deg ax sym i (k+1)),   "Invalid reflected symmetry")
+    printfn "  checkSymmetry OK."
+    ()
 
 
 module Dischg =
