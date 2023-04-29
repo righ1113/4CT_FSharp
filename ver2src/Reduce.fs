@@ -12,17 +12,15 @@ module Const =
                           // must be at least 13 because of row 0
   let EDGES          = 62 // max number of edges in a free completion + 1
   let MAXRING        = 14 // max ring-size
-                         // 3^(i-1)
+                          // 3^(i-1)
   let POWER          = [|0; 1; 3; 9; 27; 81; 243; 729; 2187; 6561; 19683; 59049; 177147; 531441; 1594323; 4782969; 14348907|]
   let SIMATCHNUMBER  = [0; 0; 1; 3; 10; 30; 95; 301; 980; 3228; 10797; 36487; 124542; 428506; 1485003]
-
   type TpAngle       = int array array
   type TpedgeNo      = int array array
   type TpGConfMajor  = {verts: int; ring: int; term: int; edges: int; claim: int; cont0: int; contE: int; bigno: int; ncodes: int; nchar: int;}
   type TpAnglePack   = int array array * TpedgeNo * TpAngle * TpAngle * TpAngle * int array
   type TpLiveTwin    = int array * int
   type TpLiveState   = TpLiveTwin * int8 array * int * int8 * int * TpGConfMajor * TpAnglePack * bool * bool
-
   type TpConfFmt     = JsonProvider<"[[[1]]]">
 
 
@@ -55,7 +53,6 @@ module EdgeNo =
     let verts  = major.verts
     let ring   = major.ring
     let edgeNo: Const.TpedgeNo = Array.init Const.EDGES (fun _ -> Array.zeroCreate Const.EDGES)
-
     // stripSub1
     let mutable u = 0
     for v in 1..ring do
@@ -64,7 +61,6 @@ module EdgeNo =
       edgeNo.[v].[u] <- v
     let done0 = Array.replicate Const.MVERTS false
     let mutable term  = major.term
-
     // stripSub2
     let mutable best = 1
     let max = Array.replicate Const.MVERTS 0
@@ -114,7 +110,6 @@ module EdgeNo =
       with
       | Break -> ()
       done0.[best] <- true
-
     // stripSub3
     // Now we must list the edges between the interior and the ring
     let mutable maxint = 0
@@ -148,16 +143,14 @@ module EdgeNo =
     (gConf, (major : Const.TpGConfMajor), edgeNo)
 
 
-
 module Angles =
   exception Continue
   exception Break
   exception Return of int
-  let angle     = Array.init Const.EDGES (fun _ -> Array.zeroCreate 5)
-  let diffangle = Array.init Const.EDGES (fun _ -> Array.zeroCreate 5)
-  let sameangle = Array.init Const.EDGES (fun _ -> Array.zeroCreate 5)
-  let contract  = Array.replicate (Const.EDGES + 1) 0
-
+  let private angle     = Array.init Const.EDGES (fun _ -> Array.zeroCreate 5)
+  let private diffangle = Array.init Const.EDGES (fun _ -> Array.zeroCreate 5)
+  let private sameangle = Array.init Const.EDGES (fun _ -> Array.zeroCreate 5)
+  let private contract  = Array.replicate (Const.EDGES + 1) 0
   let private anglesSub2Sub x y c =
     try
       if x <= c then raise (Return 0)
@@ -173,7 +166,6 @@ module Angles =
       1
     with
     | Return x -> x;
-
   let private anglesSub2 (gConf : int array array) (edgeNo : Const.TpedgeNo) =
     for v in 1..gConf.[0 + 1].[0] do
       try
@@ -196,7 +188,6 @@ module Angles =
       with
       | Break -> ()
     true
-
   let private anglesSub3 (gConf : int array array) verts ring =
     let neighbour = Array.replicate Const.MVERTS false
     // checking that there is a triad
@@ -228,7 +219,6 @@ module Angles =
       0 // ここには来ない
     with
     | Return x -> x
-
   let run (gConf : int array array) (edgeNo : Const.TpedgeNo) (major : Const.TpGConfMajor) =
     contract.[0]           <- major.cont0 // number of edges in contract
     contract.[Const.EDGES] <- major.contE
@@ -331,16 +321,15 @@ module MLive =
     (live, y)
 
 
-
 module DReduce =
   exception Continue
   exception Return of int
-  let interval    = Array.replicate 10 0
-  let weight      = Array.init 16 (fun _ -> Array.zeroCreate 4)
-  let matchweight = Array.init 16 (fun _ -> Array.init 16 (fun _ -> Array.zeroCreate 4))
-  let mutable nReal2 = 0
-  let mutable bit2 = 1y
-  let mutable realTerm2 = 0
+  let private interval    = Array.replicate 10 0
+  let private weight      = Array.init 16 (fun _ -> Array.zeroCreate 4)
+  let private matchweight = Array.init 16 (fun _ -> Array.init 16 (fun _ -> Array.zeroCreate 4))
+  let mutable private nReal2 = 0
+  let mutable private bit2 = 1y
+  let mutable private realTerm2 = 0
   let isStillReal col (choice : int array) depth (live : int array) on =
     let mutable nTwisted = 0
     let mutable nUnTwisted = 0
@@ -436,7 +425,6 @@ module DReduce =
           augment newN newInterval (depth + 1) live real baseCol on major |> ignore
     true
   let testMatch ((live, nLive), real, nReal, bit, realTerm, (major : Const.TpGConfMajor), d, b1, b2) =
-    // long dReduceTestMatch(long ring, ref byte[] real2, long[] power, ref byte[] live, long nbyte) pure {
     // /* "nReal" will be the number of balanced signed matchings such that all associated colourings belong to "live",
     // * ie the total number of nonzero bits in the entries of "real" */
     let mutable n = 0
@@ -495,6 +483,7 @@ module DReduce =
       (1 = ret, 0 = newnlive, (live, newnlive))
     let (b1, b2, twin2) = isUpdate (major.ncodes) twin nReal
     (twin2, real, 0, 1y, 0, major, ap, b1, b2)
+
 
 module Re =
   let rec private until p f (a: 'a) = if p a then a else until p f (f a)

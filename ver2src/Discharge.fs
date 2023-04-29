@@ -60,7 +60,7 @@ module Apply =
       sym.value.[ii]
     with
     | Return x -> x
-  let run deg (strL : string list) (ax : Const.TpAxle) (sym : Const.TpPosout) nosym =
+  let run deg (ax : Const.TpAxle) (strL : string list) (sym : Const.TpPosout) nosym =
     let k       = int (Int32.Parse strL.[0])
     let epsilon = int (Int32.Parse strL.[1])
     let level   = int (Int32.Parse strL.[2])
@@ -82,16 +82,16 @@ module Apply =
 
 module CaseSplit =
   // TpCond
-  let nn = Array.replicate Const.MAXLEV 0
-  let mm = Array.replicate Const.MAXLEV 0
+  let private nn = Array.replicate Const.MAXLEV 0
+  let private mm = Array.replicate Const.MAXLEV 0
   // sym
-  let symNum = Array.zeroCreate (Const.MAXSYM + 1)
-  let symNol = Array.zeroCreate (Const.MAXSYM + 1)
-  let symVal = Array.zeroCreate (Const.MAXSYM + 1)
-  let symPos = Array.init (Const.MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
-  let symLow = Array.init (Const.MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
-  let symUpp = Array.init (Const.MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
-  let symXxx = Array.zeroCreate (Const.MAXSYM + 1)
+  let private symNum = Array.zeroCreate (Const.MAXSYM + 1)
+  let private symNol = Array.zeroCreate (Const.MAXSYM + 1)
+  let private symVal = Array.zeroCreate (Const.MAXSYM + 1)
+  let private symPos = Array.init (Const.MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
+  let private symLow = Array.init (Const.MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
+  let private symUpp = Array.init (Const.MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
+  let private symXxx = Array.zeroCreate (Const.MAXSYM + 1)
   let sym : Const.TpPosout = {number = symNum; nolines = symNol; value = symVal; pos = symPos; plow = symLow; pupp = symUpp; xx = symXxx}
   let mutable nosym: int = 0
   let run deg (ax : Const.TpAxle) n m lineCnt =
@@ -151,7 +151,7 @@ module Dischg =
   let private readFileRulesD =
     let ind = Const.TpDiRules.Parse <| File.ReadAllText "data/DiRules07.txt"
     {number = ind.A; nolines = ind.B; value = ind.C; pos = ind.D; plow = ind.E; pupp = ind.F; xx = ind.G} : Const.TpPosout
-  let posout = readFileRulesD
+  let private posout = readFileRulesD
   let rec private dischgCoreSub5 deg (ax : Const.TpAxle) forcedch allowedch (s : int array) maxch pos0 depth =
     try
       let mutable pos = pos0
@@ -201,8 +201,6 @@ module Dischg =
     | Return x -> x
   and private dischgCore deg (ax: Const.TpAxle) (s : int array) maxch pos depth =
     // 1. compute forced and permitted rules, allowedch, forcedch, update s
-    // let (forcedch, allowedch, s) = dischgCoreSub1 deg (ax.low.[ax.lev], ax.upp.[ax.lev]) 0 0 0 s0
-    //liftIO $ printf "f, a = %d, %d\n" forcedch allowedch
     let mutable forcedch = 0
     let mutable allowedch = 0
     let mutable i = 0
@@ -222,7 +220,7 @@ module Dischg =
     // 3. check if inequality holds
     if forcedch + allowedch <= maxch then
       printfn "1 %d Inequality holds. Case done." depth
-      () // true end
+      () // true end 1
     elif forcedch > maxch then // 4. check reducibility
       // lift $ put (((aSLow & ix 0 .~ axLowL, aSUpp & ix 0 .~ axUppL, aSLev), used, image, adjmat, edgelist), posoutX)
       // ret <- (lift . runMaybeT . reduce) 1
@@ -232,10 +230,10 @@ module Dischg =
       //   liftIO $ printf "%d, %d, %d Reducible. Case done.\n" forcedch allowedch maxch
       //   empty -- true end
       printfn "2 %d reduce done." depth
-      () // true end
+      () // true end 2
     elif 0 <> dischgCoreSub5 deg ax forcedch allowedch s maxch pos depth then // 5.
       printfn "3 %d dischgCoreSub5() done." depth
-      () // true end
+      () // true end 3
     else
       // 6. error
       Debug.Assert(false, "Unexpected error 101")
@@ -317,7 +315,7 @@ module Di =
   let private apply x =
     match x with
     | (deg, (ax : Const.TpAxle), (_ :: "S" :: strL) :: tailTac, lineCnt) ->
-        Apply.run deg strL ax CaseSplit.sym CaseSplit.nosym; CaseSplit.downNosym ax.lev
+        Apply.run deg ax strL CaseSplit.sym CaseSplit.nosym; CaseSplit.downNosym ax.lev
         (deg, {ax with lev = ax.lev - 1}, tailTac, lineCnt + 1)
     | _ -> x
   let private dischg x =
