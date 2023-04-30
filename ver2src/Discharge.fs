@@ -21,6 +21,8 @@ module Const =
   type TpAxle   = {low: int array array; upp: int array array; lev: int}
   type TpPosout = {number: int array; nolines: int array; value: int array; pos: int array array; plow: int array array; pupp: int array array; xx: int array}
   type TpDiRules  = JsonProvider<"""{"a":[0], "b":[0], "c":[8], "d":[[6]], "e":[[6]], "f":[[6]], "g":[6]}""">
+  type TpDiRules2    = JsonProvider<"""[{"b":[0], "z":[0], "c":"comment"}]""">
+  type TpRules2Ret   = {B: int array; Z: int array; Comment: string}
 
 
 module CaseSplit =
@@ -145,13 +147,141 @@ module Apply =
     ()
 
 
+module Adjmat =
+  type Way = Forward | Backward
+  let private adjmat = Array.init (Const.CARTVERT) (fun _ -> Array.zeroCreate Const.CARTVERT)
+  let chgAdjmat a b c way =
+    adjmat.[a].[b] <- c
+    if way = Forward then
+      adjmat.[c].[a] <- b
+      adjmat.[b].[c] <- a
+    else
+      adjmat.[b].[c] <- a
+      adjmat.[c].[a] <- b
+  let doFan deg i k =
+    let a = if i = 1 then 2 * deg else deg + i - 1
+    let b = deg + i
+    let c = 2 * deg + i
+    let d = 3 * deg + i
+    let e = 4 * deg + i
+    match k with
+    | 5 ->  chgAdjmat i a b Backward
+    | 6 ->  chgAdjmat i a c Backward
+            chgAdjmat i c b Backward
+    | 7 ->  chgAdjmat i a c Backward
+            chgAdjmat i c d Backward
+            chgAdjmat i d b Backward
+    | _ ->  chgAdjmat i a c Backward
+            chgAdjmat i c d Backward
+            chgAdjmat i d e Backward
+            chgAdjmat i e b Backward
+  let getAdjmat deg (ax : Const.TpAxle) =
+    for a = 0 to Const.CARTVERT - 1 do
+      for b = 0 to Const.CARTVERT - 1 do
+        adjmat.[a].[b] <- -1
+    for i = 1 to deg do
+      let h = if i = 1 then deg else i - 1
+      chgAdjmat 0 h i Forward
+      let a = deg + h
+      chgAdjmat i h a Forward
+      if ax.upp.[ax.lev].[i] < 9 then doFan deg i ax.upp.[ax.lev].[i]
+    adjmat
+
+
+module Rules =
+  exception Continue
+  exception Return of int
+  let private symNum = Array.zeroCreate (Const.MAXOUTLETS * 2)
+  let private symNol = Array.zeroCreate (Const.MAXOUTLETS * 2)
+  let private symVal = Array.zeroCreate (Const.MAXOUTLETS * 2)
+  let private symPos = Array.init (Const.MAXOUTLETS * 2) (fun _ -> Array.zeroCreate 17)
+  let private symLow = Array.init (Const.MAXOUTLETS * 2) (fun _ -> Array.zeroCreate 17)
+  let private symUpp = Array.init (Const.MAXOUTLETS * 2) (fun _ -> Array.zeroCreate 17)
+  let private symXxx = Array.zeroCreate (Const.MAXOUTLETS * 2)
+  let private posout : Const.TpPosout = {number = symNum; nolines = symNol; value = symVal; pos = symPos; plow = symLow; pupp = symUpp; xx = symXxx}
+  let doOutlet deg axles number (zzz : int array) (bbb : int array) index (xxx : int array) (yyy : int array) =
+    let adjmat = Adjmat.getAdjmat deg axles
+    posout.nolines.[index] <- zzz.[0] - 1
+    posout.number.[index]  <- number
+    let phi = Array.replicate 17 (-1)
+    let mutable k = 0
+    phi.[0]              <- if number > 0 then 1 else 0
+    phi.[1]              <- if number > 0 then 0 else 1
+    posout.value.[index] <- if number > 0 then 1 else -1
+    k                    <- if number > 0 then 1 else 0
+    posout.pos.[index].[0] <- 1
+    try
+      // # compute phi
+      let mutable i = 0
+      for j = 0 to zzz.[0] - 1 do
+        try
+          posout.plow.[index].[i] <- bbb.[j] / 10
+          posout.pupp.[index].[i] <- bbb.[j] % 10
+          if posout.pupp.[index].[i] = 9 then posout.pupp.[index].[i] <- Const.INFTY
+          if posout.plow.[index].[i] = 0 then posout.plow.[index].[i] <- posout.pupp.[index].[i]
+          if j = k then
+            if not (posout.plow.[index].[i] <= deg && deg <= posout.pupp.[index].[i]) then raise (Return 0)
+            // # if above true then outlet cannot apply for this degree
+            raise Continue
+          let mutable u = 0
+          if j >= 2 then // # now computing T->pos[i]
+            u <- phi.[xxx.[zzz.[j]]]
+            let v = phi.[yyy.[zzz.[j]]]
+            posout.pos.[index].[i] <- adjmat.[u].[v]
+            phi.[zzz.[j]]          <- adjmat.[u].[v]
+          u <- posout.pos.[index].[i]
+          // # update adjmat
+          if u <= deg && posout.plow.[index].[i] = posout.pupp.[index].[i] then Adjmat.doFan deg u posout.plow.[index].[i]
+          i <- i + 1
+        with
+        | Continue -> ()
+      // # Condition (T4) is checked in CheckIso
+      1
+    with
+    | Return x -> x
+  let readFileRulesD2 =
+    let mutable out = [||]
+    let ind = Const.TpDiRules2.Parse <| File.ReadAllText "data/DiRules.txt"
+    for indLine in ind do
+      let ret = {B = indLine.B; Z = indLine.Z; Comment = indLine.C} : Const.TpRules2Ret
+      out <- Array.append out [|ret|]
+    out
+  let initPosout deg axles =
+    let u = [|0; 0; 0; 1; 0; 3; 2; 1; 4; 3; 8; 3; 0; 0; 5; 6; 15|]
+    let v = [|0; 0; 1; 0; 2; 0; 1; 3; 2; 5; 2; 9; 4; 12; 0; 1; 1|]
+    let rules = readFileRulesD2
+    // # p rules[10]['z']
+    // # set data
+    let mutable index = 0
+    for line in rules do
+      if line.Comment = "invert" then
+        if 0 <> doOutlet deg axles  line.Z.[1] line.Z line.B index v u then index <- index + 1
+        if 0 <> doOutlet deg axles -line.Z.[1] line.Z line.B index v u then index <- index + 1
+      else
+        if 0 <> doOutlet deg axles  line.Z.[1] line.Z line.B index u v then index <- index + 1
+        if 0 <> doOutlet deg axles -line.Z.[1] line.Z line.B index u v then index <- index + 1
+    // # データを2回重ねる
+    for i = 0 to index - 1 do
+      posout.number.[i + index]  <- posout.number.[i]
+      posout.nolines.[i + index] <- posout.nolines.[i]
+      posout.value.[i + index]   <- posout.value.[i]
+      posout.pos.[i + index]     <- Array.copy posout.pos.[i]
+      posout.plow.[i + index]    <- Array.copy posout.plow.[i]
+      posout.pupp.[i + index]    <- Array.copy posout.pupp.[i]
+      posout.xx.[i + index]      <- posout.xx.[i]
+    posout
+
+
 module Dischg =
   exception Continue
   exception Return of int
   let private readFileRulesD =
+    // 未使用
     let ind = Const.TpDiRules.Parse <| File.ReadAllText "data/DiRules07.txt"
     {number = ind.A; nolines = ind.B; value = ind.C; pos = ind.D; plow = ind.E; pupp = ind.F; xx = ind.G} : Const.TpPosout
-  let private posout = readFileRulesD
+  let mutable private posout =
+    {number = null; nolines = null; value = null; pos = null; plow = null; pupp = null; xx = null} : Const.TpPosout
+  let mutable private initEnd = false
   let rec private dischgCoreSub5 deg (ax : Const.TpAxle) forcedch allowedch (s : int array) maxch pos0 depth =
     try
       let mutable pos = pos0
@@ -244,6 +374,10 @@ module Dischg =
           //(rP1    : byref<Const.TpReducePack1>)
           //(rP2    : byref<Const.TpReducePack2>)
             =
+    // init
+    if initEnd = false then
+      posout  <- Rules.initPosout deg ax
+      initEnd <- true
     // 0.
     let xyv =
       strL |> List.map ( (fun (str: string) -> str.Split [|','; '('; ')'|])
