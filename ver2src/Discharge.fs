@@ -7,22 +7,22 @@ open FSharp.Data
 
 
 module Const =
-  let VERTS      = 27             // max number of vertices in a free completion + 1
-  let CONFS      = 640            // max number of configurations
-  let MAXVAL     = 12
-  let CARTVERT   = 5 * MAXVAL + 2 // domain of l_A, u_A, where A is an axle
-  let INFTY      = 12             // the "12" in the definition of limited part
-  let MAXOUTLETS = 110            // max number of outlets
-  let MAXSYM     = 50             // max number of symmetries
-  let MAXELIST   = 134            // length of edgelist[a][b]
-  let MAXSTACK   = 5              // max height of Astack (see "Reduce")
-  let MAXLEV     = 12             // max level of an input line + 1
-  let DIFNOUTS   = [0; 0; 0; 0; 0; 0; 0; 103; 64; 53; 53; 53]
-  type TpAxle   = {low: int array array; upp: int array array; lev: int}
-  type TpPosout = {number: int array; nolines: int array; value: int array; pos: int array array; plow: int array array; pupp: int array array; xx: int array}
-  type TpDiRules  = JsonProvider<"""{"a":[0], "b":[0], "c":[8], "d":[[6]], "e":[[6]], "f":[[6]], "g":[6]}""">
-  type TpDiRules2    = JsonProvider<"""[{"b":[0], "z":[0], "c":"comment"}]""">
-  type TpRules2Ret   = {B: int array; Z: int array; Comment: string}
+  let VERTS        = 27             // max number of vertices in a free completion + 1
+  let CONFS        = 640            // max number of configurations
+  let MAXVAL       = 12
+  let CARTVERT     = 5 * MAXVAL + 2 // domain of l_A, u_A, where A is an axle
+  let INFTY        = 12             // the "12" in the definition of limited part
+  let MAXOUTLETS   = 110            // max number of outlets
+  let MAXSYM       = 50             // max number of symmetries
+  let MAXELIST     = 134            // length of edgelist[a][b]
+  let MAXSTACK     = 5              // max height of Astack (see "Reduce")
+  let MAXLEV       = 12             // max level of an input line + 1
+  let DIFNOUTS     = [0; 0; 0; 0; 0; 0; 0; 103; 64; 53; 53; 53]
+  type TpAxle      = {low: int array array; upp: int array array; lev: int}
+  type TpPosout    = {number: int array; nolines: int array; value: int array; pos: int array array; plow: int array array; pupp: int array array; xx: int array}
+  type TpDiRules   = JsonProvider<"""{"a":[0], "b":[0], "c":[8], "d":[[6]], "e":[[6]], "f":[[6]], "g":[6]}""">
+  type TpDiRules2  = JsonProvider<"""[{"b":[0], "z":[0], "c":"comment"}]""">
+  type TpRules2Ret = {B: int array; Z: int array; Comment: string}
 
 
 module CaseSplit =
@@ -33,9 +33,9 @@ module CaseSplit =
   let private symNum = Array.zeroCreate (Const.MAXSYM + 1)
   let private symNol = Array.zeroCreate (Const.MAXSYM + 1)
   let private symVal = Array.zeroCreate (Const.MAXSYM + 1)
-  let private symPos = Array.init (Const.MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
-  let private symLow = Array.init (Const.MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
-  let private symUpp = Array.init (Const.MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
+  let private symPos = Array.init       (Const.MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
+  let private symLow = Array.init       (Const.MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
+  let private symUpp = Array.init       (Const.MAXSYM + 1) (fun _ -> Array.zeroCreate 17)
   let private symXxx = Array.zeroCreate (Const.MAXSYM + 1)
   let sym : Const.TpPosout = {number = symNum; nolines = symNol; value = symVal; pos = symPos; plow = symLow; pupp = symUpp; xx = symXxx}
   let mutable nosym: int = 0
@@ -149,7 +149,7 @@ module Apply =
 
 module Adjmat =
   type Way = Forward | Backward
-  let private adjmat = Array.init (Const.CARTVERT) (fun _ -> Array.zeroCreate Const.CARTVERT)
+  let adjmat = Array.init (Const.CARTVERT) (fun _ -> Array.zeroCreate Const.CARTVERT)
   let chgAdjmat a b c way =
     adjmat.[a].[b] <- c
     if way = Forward then
@@ -175,7 +175,7 @@ module Adjmat =
             chgAdjmat i c d Backward
             chgAdjmat i d e Backward
             chgAdjmat i e b Backward
-  let getAdjmat deg (ax : Const.TpAxle) =
+  let resetAdjmat deg (ax : Const.TpAxle) =
     for a = 0 to Const.CARTVERT - 1 do
       for b = 0 to Const.CARTVERT - 1 do
         adjmat.[a].[b] <- -1
@@ -185,7 +185,6 @@ module Adjmat =
       let a = deg + h
       chgAdjmat i h a Forward
       if ax.upp.[ax.lev].[i] < 9 then doFan deg i ax.upp.[ax.lev].[i]
-    adjmat
 
 
 module Rules =
@@ -194,13 +193,13 @@ module Rules =
   let private symNum = Array.zeroCreate (Const.MAXOUTLETS * 2)
   let private symNol = Array.zeroCreate (Const.MAXOUTLETS * 2)
   let private symVal = Array.zeroCreate (Const.MAXOUTLETS * 2)
-  let private symPos = Array.init (Const.MAXOUTLETS * 2) (fun _ -> Array.zeroCreate 17)
-  let private symLow = Array.init (Const.MAXOUTLETS * 2) (fun _ -> Array.zeroCreate 17)
-  let private symUpp = Array.init (Const.MAXOUTLETS * 2) (fun _ -> Array.zeroCreate 17)
+  let private symPos = Array.init       (Const.MAXOUTLETS * 2) (fun _ -> Array.zeroCreate 17)
+  let private symLow = Array.init       (Const.MAXOUTLETS * 2) (fun _ -> Array.zeroCreate 17)
+  let private symUpp = Array.init       (Const.MAXOUTLETS * 2) (fun _ -> Array.zeroCreate 17)
   let private symXxx = Array.zeroCreate (Const.MAXOUTLETS * 2)
   let private posout : Const.TpPosout = {number = symNum; nolines = symNol; value = symVal; pos = symPos; plow = symLow; pupp = symUpp; xx = symXxx}
   let doOutlet deg axles number (zzz : int array) (bbb : int array) index (xxx : int array) (yyy : int array) =
-    let adjmat = Adjmat.getAdjmat deg axles
+    Adjmat.resetAdjmat deg axles
     posout.nolines.[index] <- zzz.[0] - 1
     posout.number.[index]  <- number
     let phi = Array.replicate 17 (-1)
@@ -227,8 +226,8 @@ module Rules =
           if j >= 2 then // # now computing T->pos[i]
             u <- phi.[xxx.[zzz.[j]]]
             let v = phi.[yyy.[zzz.[j]]]
-            posout.pos.[index].[i] <- adjmat.[u].[v]
-            phi.[zzz.[j]]          <- adjmat.[u].[v]
+            posout.pos.[index].[i] <- Adjmat.adjmat.[u].[v]
+            phi.[zzz.[j]]          <- Adjmat.adjmat.[u].[v]
           u <- posout.pos.[index].[i]
           // # update adjmat
           if u <= deg && posout.plow.[index].[i] = posout.pupp.[index].[i] then Adjmat.doFan deg u posout.plow.[index].[i]
@@ -368,12 +367,7 @@ module Dischg =
       // 6. error
       Debug.Assert(false, "Unexpected error 101")
 
-  let run (deg    : int)
-          (ax     : Const.TpAxle)
-          (strL   : string list)
-          //(rP1    : byref<Const.TpReducePack1>)
-          //(rP2    : byref<Const.TpReducePack2>)
-            =
+  let run deg (ax : Const.TpAxle) strL =
     // init
     if initEnd = false then
       posout  <- Rules.initPosout deg ax
