@@ -274,10 +274,9 @@ module Rules =
 module Dischg =
   exception Continue
   exception Return of int
-  let private readFileRulesD =
-    // 未使用
-    let ind = Const.TpDiRules.Parse <| File.ReadAllText "data/DiRules07.txt"
-    {number = ind.A; nolines = ind.B; value = ind.C; pos = ind.D; plow = ind.E; pupp = ind.F; xx = ind.G} : Const.TpPosout
+  // let private readFileRulesD =
+  //   let ind = Const.TpDiRules.Parse <| File.ReadAllText "data/DiRules07.txt"
+  //   {number = ind.A; nolines = ind.B; value = ind.C; pos = ind.D; plow = ind.E; pupp = ind.F; xx = ind.G} : Const.TpPosout
   let mutable private posout =
     {number = null; nolines = null; value = null; pos = null; plow = null; pupp = null; xx = null} : Const.TpPosout
   let mutable private initEnd = false
@@ -416,16 +415,17 @@ module Dischg =
 
 module Di =
   let rec private until p f (a: 'a) = if p a then a else until p f (f a)
-  let private makeDisData =
+  let private makeDisData deg =
+    let tacName = [""; ""; ""; ""; ""; ""; ""; "data/DiTactics07.txt";
+      "data/DiTactics08.txt"; "data/DiTactics09.txt"; "data/DiTactics10.txt"; "data/DiTactics11.txt"]
     let readFileTacticsD =
-      File.ReadAllLines "data/DiTactics07.txt"
+      File.ReadAllLines tacName.[deg]
         |> Array.toList
         |> List.map ((fun str -> str.Split " ")
                       >> Array.toList
                       >> (List.filter (not << String.IsNullOrEmpty)))
     //let tac2: string list list = [["Degree"; "7"]; ["L0"; "C"; "1"; "-5"]; ["Q.E.D."]]
     // TpAxle
-    let deg = 7
     let axles0    = Array.init Const.MAXLEV (fun _ -> Array.zeroCreate Const.CARTVERT)
     let axlesLow0 = Array.take Const.CARTVERT (Array.concat [| [|deg|]; (Array.create (5*deg) 5);           (Array.replicate 1000 0) |])
     let axlesUpp0 = Array.take Const.CARTVERT (Array.concat [| [|deg|]; (Array.create (5*deg) Const.INFTY); (Array.replicate 1000 0) |])
@@ -459,12 +459,12 @@ module Di =
         (deg, {ax with lev = ax.lev - 1}, tailTac, lineCnt + 1)
     | _ -> x
 
-  let discharge: bool =
+  let discharge deg =
     let isEnd x =
       match x with
       | (_, {low=_; upp=_; lev=(-1)} : Const.TpAxle, ("Q.E.D." :: _) :: _, _) -> true
       | _                                                                     -> false
-    makeDisData |> until isEnd (caseSplit >> apply >> dischg >> disReduce) |> printfn "%A"
+    makeDisData deg |> until isEnd (caseSplit >> apply >> dischg >> disReduce) |> printfn "%A"
     true
 
 
