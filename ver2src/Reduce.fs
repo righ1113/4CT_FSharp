@@ -156,7 +156,6 @@ module Angles =
       if x <= c then raise (Return 0)
       let d = if angle.[c].[0] >= 4 then 4 else angle.[c].[0] <- angle.[c].[0] + 1; angle.[c].[0]
       angle.[c].[d] <- x
-      // printfn "x,y,c: %d %d %d" x y c
       if contract.[x] = 0 && contract.[y] = 0 && contract.[c] = 0 then
         let e = if diffangle.[c].[0] >= 4 then 4 else diffangle.[c].[0] <- diffangle.[c].[0] + 1; diffangle.[c].[0]
         diffangle.[c].[e] <- x
@@ -291,7 +290,6 @@ module MLive =
     let live      = Array.replicate (major.ncodes) 1
     c[major.edges] <- 1
     let mutable j = major.edges - 1
-    // printfn "aaa: %d" j
     c[j] <- 2
     forbidden[j] <- 5
     let mutable extent = 0
@@ -300,16 +298,13 @@ module MLive =
         while true do
           while 0 <> (forbidden.[j] &&& c.[j]) do
             let ret = isEndFL &j c extent major
-            // printfn "bbb: %d" j
             if ret <> 0 then raise (Return ret)
           if j = major.ring + 1 then
             chgLive c angle live &extent major |> ignore
-            // printfn "ccc: %d" j
             let ret = isEndFL &j c extent major
             if ret <> 0 then raise (Return ret)
           else
             j <- j - 1
-            // printfn "ddd: %d" j
             let am = angle.[j]
             c[j] <- 1
             let mutable u = 0
@@ -340,13 +335,11 @@ module DReduce =
     let sum       = Array.replicate 64 0
     try
       if col < 0 then
-        // printfn "col1: %d %d" col (Array.length live)
         if 0 = live.[-col] then raise (Return 0)
         twisted.[nTwisted] <- -col
         nTwisted <- nTwisted + 1
         sum.[0] <- col
       else
-        // printfn "col2: %d %d" col (Array.length live)
         if 0 = live.[col] then raise (Return 0)
         unTwisted.[nUnTwisted] <- col
         nUnTwisted <- nUnTwisted + 1
@@ -385,7 +378,6 @@ module DReduce =
           bit2 <- 1y; realTerm2 <- realTerm2 + 1
           Debug.Assert((realTerm2 <= major.nchar), "More than entries in real are needed")
         if 0y = (bit2 &&& real.[realTerm2]) then bit2 <- bit2 <<< 1; raise Continue
-        // printfn "%d %d %d %d" bit2 nBits realTerm2 major.nchar
         let mutable col    = baseCol
         let mutable parity = major.ring &&& 1
         let mutable left   = k
@@ -407,7 +399,6 @@ module DReduce =
       | Continue -> ()
     true
   let rec augment n (interval2 : int array) depth live real baseCol on major =
-    // printfn "depth: %d" depth
     checkReality depth live real baseCol on major |> ignore
     let mutable newN = 0
     let newInterval = Array.replicate 10 0

@@ -64,7 +64,6 @@ module CaseSplit =
       if (nn.[i] > 2 * deg || nn.[i] < 1) then good <- false
     if good then // remember symmetry
       Debug.Assert((nosym < Const.MAXSYM), "Too many symmetries")
-      //T = &sym[nosym + 1];
       sym.number.[nosym] <- lineCnt
       sym.value.[nosym] <- 1
       sym.nolines.[nosym] <- ax.lev + 1
@@ -309,14 +308,11 @@ module Dischg =
             let mutable sPrime = Array.replicate (Array.length s) 0
             sPrime <- Array.copy s
             sPrime.[pos] <- 1
-            // if (print >= 3) { writef("Starting recursion with "); writef(",%d forced\n", x); }
             dischgCore deg ax2 sPrime maxch (pos + 1) (depth + 1)
-          // /* rejecting positioned outlet PO */
-          // if (print >= 3) { writef("Rejecting positioned outlet "); writef(",%d. ", x); }
+          // rejecting positioned outlet PO
           s[pos] <- -1
           allowedch2 <- allowedch2 - posout.value.[pos]
           if allowedch2 + forcedch <= maxch then
-            // if (print >= 3) writef("Inequality holds.\n");
             raise (Return 1) // ★★★ ここから脱出するしかない
           pos <- pos + 1
         with
