@@ -289,11 +289,8 @@ module Dischg =
           if s.[pos] <> 0 || posout.value.[pos] < 0 then pos <- pos + 1; raise Continue
           // /* accepting positioned outlet PO, computing AA */
           let x = posout.xx.[pos]
-          let axles0    = Array.init Const.MAXLEV (fun _ -> Array.zeroCreate Const.CARTVERT)
-          let axlesLow0 = Array.take Const.CARTVERT (Array.concat [| [|deg|]; (Array.create (5*deg) 5);           (Array.replicate 1000 0) |])
-          let axlesUpp0 = Array.take Const.CARTVERT (Array.concat [| [|deg|]; (Array.create (5*deg) Const.INFTY); (Array.replicate 1000 0) |])
-          let axlesLow  = Array.append [|axlesLow0|] axles0
-          let axlesUpp  = Array.append [|axlesUpp0|] axles0
+          let axlesLow = Array.init (Const.MAXLEV + 1) (fun _ -> Array.zeroCreate Const.CARTVERT)
+          let axlesUpp = Array.init (Const.MAXLEV + 1) (fun _ -> Array.zeroCreate Const.CARTVERT)
           let ax2 = {low = axlesLow; upp = axlesUpp; lev = ax.lev} : Const.TpAxle
           ax2.low.[ax2.lev] <- Array.copy ax.low.[ax.lev]
           ax2.upp.[ax2.lev] <- Array.copy ax.upp.[ax.lev]
