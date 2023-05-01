@@ -349,7 +349,7 @@ module Dischg =
       //   error "Incorrect hubcap upper bound"
       // else do
       //   liftIO $ printf "%d, %d, %d Reducible. Case done.\n" forcedch allowedch maxch
-      //   empty -- true end
+      //   empty
       printfn "2 %d reduce done." depth
       () // true end 2
     elif 0 <> dischgCoreSub5 deg ax forcedch allowedch s maxch pos depth then // 5.
@@ -402,7 +402,6 @@ module Dischg =
       else
         s.[nouts] <- 99 // to indicate end of list
       dischgCore deg ax s v.[i] 0 0
-    // printfn ""
     ()
 
 
