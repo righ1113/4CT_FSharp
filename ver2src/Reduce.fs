@@ -219,6 +219,14 @@ module Angles =
     with
     | Return x -> x
   let run (gConf : int array array) (edgeNo : Const.TpedgeNo) (major : Const.TpGConfMajor) =
+    // init
+    for i = 0 to Const.EDGES - 1 do
+      for j = 0 to 4 do
+        angle.[i].[j] <- 0
+        diffangle.[i].[j] <- 0
+        sameangle.[i].[j] <- 0
+    for i = 0 to Const.EDGES do
+      contract.[i] <- 0
     contract.[0]           <- major.cont0 // number of edges in contract
     contract.[Const.EDGES] <- major.contE
     for i in 1..contract.[0] do
@@ -250,13 +258,13 @@ module MLive =
   // * free extension. Returns the number of such codes */
   let private isEndFL (j : int byref) (c : int array) (extent : int) (major : Const.TpGConfMajor) =
     let printStatus ring totalcols (extent : int) extentclaim =
-      printf "\n\n   This has ring-size %d, so there are %d colourings total,\n" ring totalcols
-      printf "   and %d balanced signed matchings.\n" Const.SIMATCHNUMBER.[ring]
-      printf "\n   There are %d colourings that extend to the configuration." extent
+      // printf "\n\n   This has ring-size %d, so there are %d colourings total,\n" ring totalcols
+      // printf "   and %d balanced signed matchings.\n" Const.SIMATCHNUMBER.[ring]
+      // printf "\n   There are %d colourings that extend to the configuration." extent
       Debug.Assert((extent = extentclaim), "   *** ERROR31: DISCREPANCY IN NUMBER OF EXTENDING COLOURINGS ***")
-      printf "\n\n            remaining               remaining balanced\n"
-      printf "           colourings               signed matchings\n"
-      printf "\n              %7d" (totalcols - extent)
+      // printf "\n\n            remaining               remaining balanced\n"
+      // printf "           colourings               signed matchings\n"
+      // printf "\n              %7d" (totalcols - extent)
       true
     try
       c.[j] <- c.[j] <<< 1
@@ -461,13 +469,13 @@ module DReduce =
             if live.[i] <> 15 then live.[i] <- 0
             else
               newnlive <- newnlive + 1; live.[i] <- 1;
-          printf "               %d\n" nReal // right
-          printf "            %9d" newnlive  // left
+          // printf "               %d\n" nReal // right
+          // printf "            %9d" newnlive  // left
           if (newnlive < nLive) && (newnlive > 0) then raise (Return 0)
-          if 0 = newnlive then
-            printf "\n\n\n                  ***  D-reducible  ***\n\n"
-          else
-            printf "\n\n\n                ***  Not D-reducible  ***\n"
+          //if 0 = newnlive then
+            // printf "\n\n\n                  ***  D-reducible  ***\n\n"
+          //else
+            // printf "\n\n\n                ***  Not D-reducible  ***\n"
           1
         with
         | Return x -> x
@@ -516,9 +524,9 @@ module Re =
   let private chkCReduce _ = true
 
   let reduce =
-    // gConfs |> Array.forall (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce >> chkCReduce)
-    let (liveTwin, _, _, _, _, _, _, b1, b2) = gConfs.[0] |> (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce)
-    (b1, b2)
+    gConfs |> Array.Parallel.map (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce >> chkCReduce)
+    // let (liveTwin, _, _, _, _, _, _, b1, b2) = gConfs.[10] |> (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce)
+    // (b1, b2)
 
 
 
