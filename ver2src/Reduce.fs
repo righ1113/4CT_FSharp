@@ -1,3 +1,4 @@
+// 9:13 7m-100 20m-200 100m-300 100m-500 90m-600 26m-33
 namespace Reduce
 
 // open System
@@ -258,13 +259,13 @@ module MLive =
   // * free extension. Returns the number of such codes */
   let private isEndFL (j : int byref) (c : int array) (extent : int) (major : Const.TpGConfMajor) =
     let printStatus ring totalcols (extent : int) extentclaim =
-      // printf "\n\n   This has ring-size %d, so there are %d colourings total,\n" ring totalcols
-      // printf "   and %d balanced signed matchings.\n" Const.SIMATCHNUMBER.[ring]
-      // printf "\n   There are %d colourings that extend to the configuration." extent
+      printf "\n\n   This has ring-size %d, so there are %d colourings total,\n" ring totalcols
+      printf "   and %d balanced signed matchings.\n" Const.SIMATCHNUMBER.[ring]
+      printf "\n   There are %d colourings that extend to the configuration." extent
       Debug.Assert((extent = extentclaim), "   *** ERROR31: DISCREPANCY IN NUMBER OF EXTENDING COLOURINGS ***")
-      // printf "\n\n            remaining               remaining balanced\n"
-      // printf "           colourings               signed matchings\n"
-      // printf "\n              %7d" (totalcols - extent)
+      printf "\n\n            remaining               remaining balanced\n"
+      printf "           colourings               signed matchings\n"
+      printf "\n              %7d" (totalcols - extent)
       true
     try
       c.[j] <- c.[j] <<< 1
@@ -469,13 +470,13 @@ module DReduce =
             if live.[i] <> 15 then live.[i] <- 0
             else
               newnlive <- newnlive + 1; live.[i] <- 1;
-          // printf "               %d\n" nReal // right
-          // printf "            %9d" newnlive  // left
+          printf "               %d\n" nReal // right
+          printf "            %9d" newnlive  // left
           if (newnlive < nLive) && (newnlive > 0) then raise (Return 0)
-          //if 0 = newnlive then
-            // printf "\n\n\n                  ***  D-reducible  ***\n\n"
-          //else
-            // printf "\n\n\n                ***  Not D-reducible  ***\n"
+          if 0 = newnlive then
+            printf "\n\n\n                  ***  D-reducible  ***\n\n"
+          else
+            printf "\n\n\n                ***  Not D-reducible  ***\n"
           1
         with
         | Return x -> x
@@ -521,10 +522,10 @@ module Re =
     let p (_, _, _, _, _, _, _, b1, _) = b1
     until p (DReduce.testMatch >> DReduce.updateLive)
 
-  let private chkCReduce _ = true
+  let private chkCReduce (_, _, _, _, _, _, _, _, b2) = b2
 
   let reduce =
-    gConfs |> Array.Parallel.map (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce >> chkCReduce)
+    gConfs |> Array.take 12 |> Array.map (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce >> chkCReduce)
     // let (liveTwin, _, _, _, _, _, _, b1, b2) = gConfs.[10] |> (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce)
     // (b1, b2)
 
