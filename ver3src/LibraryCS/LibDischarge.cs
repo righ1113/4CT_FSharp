@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using LibraryFS;
 
 
 namespace LibraryCS2 {
@@ -91,182 +90,191 @@ namespace LibraryCS2 {
     }
   }
 
-  public static class LibDischargeHubcap {
-    /*************************************************************************
-        CheckBound
-    Verifies (H1)
-    *************************************************************************/
-    public static bool CheckBound(
-      LibFS.TpPosout posout, int[] s, int maxch, int pos, int depth, ref LibFS.TpReducePack1 rP1, ref LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
-    {
-      int deg, i, x, good, forcedch, allowedch;
-      int[] sprime = new int[2 * 110 + 1];
-      int p;
-      int retN;
-      LibFS.TpReduceRet ret;
+  // public static class LibDischargeHubcap {
+  //   /*************************************************************************
+  //       CheckBound
+  //   Verifies (H1)
+  //   *************************************************************************/
+  //   public static bool CheckBound(
+  //     LibFS.TpPosout posout, int[] s, int maxch, int pos, int depth, ref LibFS.TpReducePack1 rP1, ref LibFS.TpReducePack2 rP2, TpAxle axles)
+  //   {
+  //     int deg, i, x, good, forcedch, allowedch;
+  //     int[] sprime = new int[2 * 110 + 1];
+  //     int p;
+  //     int retN;
+  //     TpReduceRet ret;
 
-      int j;
-      int[][] cpLow = new int[12 + 1][];
-      for (j = 0; j < 13; j++) {
-        cpLow[j] = new int[5 * 12 + 2];
-      }
-      int[][] cpUpp = new int[12 + 1][];
-      for (j = 0; j < 13; j++) {
-        cpUpp[j] = new int[5 * 12 + 2];
-      }
+  //     int j;
+  //     int[][] cpLow = new int[12 + 1][];
+  //     for (j = 0; j < 13; j++) {
+  //       cpLow[j] = new int[5 * 12 + 2];
+  //     }
+  //     int[][] cpUpp = new int[12 + 1][];
+  //     for (j = 0; j < 13; j++) {
+  //       cpUpp[j] = new int[5 * 12 + 2];
+  //     }
 
-      deg = axles.low[axles.lev][0];
+  //     deg = axles.low[axles.lev][0];
 
-      // 1. compute forced and permitted rules, allowedch, forcedch, update s
-      forcedch = allowedch = 0;
-      for (i = 0; s[i] < 99; i++) {
-        if (s[i] > 0)
-          forcedch += posout.value[i];
-        if (s[i] != 0)
-          continue;
-        retN = LibDischargeSymmetry.OutletForced(axles.low[axles.lev],
-                                                 axles.upp[axles.lev],
-                                                 posout.number[i],
-                                                 posout.nolines[i],
-                                                 posout.value[i],
-                                                 posout.pos[i],
-                                                 posout.plow[i],
-                                                 posout.pupp[i],
-                                                 posout.xx[i]);
-        if (retN != 0) {
-          s[i] = 1;
-          forcedch += posout.value[i];
-        }
-        else if (LibDischargeSymmetry.OutletPermitted(axles.low[axles.lev],
-                                                      axles.upp[axles.lev],
-                                                      posout.number[i],
-                                                      posout.nolines[i],
-                                                      posout.value[i],
-                                                      posout.pos[i],
-                                                      posout.plow[i],
-                                                      posout.pupp[i],
-                                                      posout.xx[i]) == 0) {
-          s[i] = -1;
-        }
-        else if (posout.value[i] > 0) {
-          allowedch += posout.value[i];
-        }
-      }
+  //     // 1. compute forced and permitted rules, allowedch, forcedch, update s
+  //     forcedch = allowedch = 0;
+  //     for (i = 0; s[i] < 99; i++) {
+  //       if (s[i] > 0)
+  //         forcedch += posout.value[i];
+  //       if (s[i] != 0)
+  //         continue;
+  //       retN = LibDischargeSymmetry.OutletForced( axles.low[axles.lev],
+  //                                                 axles.upp[axles.lev],
+  //                                                 posout.number[i],
+  //                                                 posout.nolines[i],
+  //                                                 posout.value[i],
+  //                                                 posout.pos[i],
+  //                                                 posout.plow[i],
+  //                                                 posout.pupp[i],
+  //                                                 posout.xx[i]);
+  //       if (retN != 0) {
+  //         s[i] = 1;
+  //         forcedch += posout.value[i];
+  //       }
+  //       else if (LibDischargeSymmetry.OutletPermitted(axles.low[axles.lev],
+  //                                                     axles.upp[axles.lev],
+  //                                                     posout.number[i],
+  //                                                     posout.nolines[i],
+  //                                                     posout.value[i],
+  //                                                     posout.pos[i],
+  //                                                     posout.plow[i],
+  //                                                     posout.pupp[i],
+  //                                                     posout.xx[i]) == 0) {
+  //         s[i] = -1;
+  //       }
+  //       else if (posout.value[i] > 0) {
+  //         allowedch += posout.value[i];
+  //       }
+  //     }
 
-      // 2.
-      Console.Write("{0} POs: ", depth);
-      for (i = 0; s[i] < 99; i++) {
-        if (s[i] < 0)
-          continue;
-        if (s[i] == 0)
-          Console.Write("?");
-        Console.Write("{0},{1} ", posout.number[i], posout.xx[i]);
-      }
-      Console.Write("\n");
+  //     // 2.
+  //     Console.Write("{0} POs: ", depth);
+  //     for (i = 0; s[i] < 99; i++) {
+  //       if (s[i] < 0)
+  //         continue;
+  //       if (s[i] == 0)
+  //         Console.Write("?");
+  //       Console.Write("{0},{1} ", posout.number[i], posout.xx[i]);
+  //     }
+  //     Console.Write("\n");
 
-      // 3. check if inequality holds
-      if (forcedch + allowedch <= maxch) {
-        Console.Write("{0} Inequality holds. Case done.\n", depth);
-        return true;
-      }
+  //     // 3. check if inequality holds
+  //     if (forcedch + allowedch <= maxch) {
+  //       Console.Write("{0} Inequality holds. Case done.\n", depth);
+  //       return true;
+  //     }
 
-      // 4. check reducibility
-      if (forcedch > maxch) {
-        ret = LibDischargeReduce.Reduce(ref rP1, ref rP2, axles);
-        if (ret.retB == false) {
-          Console.Write("ihihi\n");
-          // 381 L5 H  (1,1,3) (2,2,3) (3,3,-3) (4,4,4) (5,5,4) (6,6,1) (7,7,-2)
-        }
-        Debug.Assert(ret.retB,
-          "Incorrect hubcap upper bound");
-        Console.Write("{0} {1} {2} Reducible. Case done.\n", forcedch, allowedch, maxch);
-        return true;
-      }
+  //     // 4. check reducibility
+  //     if (forcedch > maxch) {
+  //       ret = LibDischargeReduce.Reduce(ref rP1, ref rP2, axles);
+  //       if (ret.retB == false) {
+  //         Console.Write("ihihi\n");
+  //         // 381 L5 H  (1,1,3) (2,2,3) (3,3,-3) (4,4,4) (5,5,4) (6,6,1) (7,7,-2)
+  //       }
+  //       Debug.Assert(ret.retB,
+  //         "Incorrect hubcap upper bound");
+  //       Console.Write("{0} {1} {2} Reducible. Case done.\n", forcedch, allowedch, maxch);
+  //       return true;
+  //     }
 
-      // 5.
-      //for (PO = posout + pos; s[pos] < 99; pos++, PO++) {
-      for (; s[pos] < 99; pos++) {
-        if (s[pos] != 0 || posout.value[pos] < 0)
-          continue;
-        x = posout.xx[pos];
+  //     // 5.
+  //     //for (PO = posout + pos; s[pos] < 99; pos++, PO++) {
+  //     for (; s[pos] < 99; pos++) {
+  //       if (s[pos] != 0 || posout.value[pos] < 0)
+  //         continue;
+  //       x = posout.xx[pos];
 
-        // accepting positioned outlet PO, computing AA
-        for (j = 0; j < 13; j++) {
-          Array.Copy(axles.low[j], cpLow[j], axles.low[j].Length);
-          Array.Copy(axles.upp[j], cpUpp[j], axles.upp[j].Length);
-        }
-        LibFS.TpAxle axles2 = new LibFS.TpAxle(cpLow, cpUpp, axles.lev);
-        for (i = 0; i < posout.nolines[pos]; ++i) {
-          if (pos > 219) {
-            break;
-          }
-          p = posout.pos[pos][i];
-          p = x - 1 + (p - 1) % deg < deg ? p + x - 1 : p + x - 1 - deg;
-          if (p >= 62) {
-            break;
-          }
-          if (posout.plow[pos][i] > axles2.low[axles2.lev][p])
-            axles2.low[axles2.lev][p] = posout.plow[pos][i];
-          if (posout.pupp[pos][i] < axles2.upp[axles2.lev][p])
-            axles2.upp[axles2.lev][p] = posout.pupp[pos][i];
-          Debug.Assert((axles2.low[axles2.lev][p] <= axles2.upp[axles2.lev][p]),
-            "Unexpected error 321");
-        }
+  //       // accepting positioned outlet PO, computing AA
+  //       for (j = 0; j < 13; j++) {
+  //         Array.Copy(axles.low[j], cpLow[j], axles.low[j].Length);
+  //         Array.Copy(axles.upp[j], cpUpp[j], axles.upp[j].Length);
+  //       }
+  //       TpAxle axles2 = new TpAxle(cpLow, cpUpp, axles.lev);
+  //       for (i = 0; i < posout.nolines[pos]; ++i) {
+  //         if (pos > 219) {
+  //           break;
+  //         }
+  //         p = posout.pos[pos][i];
+  //         p = x - 1 + (p - 1) % deg < deg ? p + x - 1 : p + x - 1 - deg;
+  //         if (p >= 62) {
+  //           break;
+  //         }
+  //         if (posout.plow[pos][i] > axles2.low[axles2.lev][p])
+  //           axles2.low[axles2.lev][p] = posout.plow[pos][i];
+  //         if (posout.pupp[pos][i] < axles2.upp[axles2.lev][p])
+  //           axles2.upp[axles2.lev][p] = posout.pupp[pos][i];
+  //         Debug.Assert((axles2.low[axles2.lev][p] <= axles2.upp[axles2.lev][p]),
+  //           "Unexpected error 321");
+  //       }
 
-        // Check if a previously rejected positioned outlet is forced to apply
-        good = 1;
-        for (i = 0; i < pos; i++) {
-          if (s[i] == -1
-              && LibDischargeSymmetry.OutletForced(axles2.low[axles2.lev],
-                                                   axles2.upp[axles2.lev],
-                                                   posout.number[i],
-                                                   posout.nolines[i],
-                                                   posout.value[i],
-                                                   posout.pos[i],
-                                                   posout.plow[i],
-                                                   posout.pupp[i],
-                                                   posout.xx[i]) != 0) {
-            Console.Write("{0} Positioned outlet ", depth);
-            Console.Write("{0},{1} can't be forced, because it forces {2},{3}\n", posout.number[pos], x, posout.number[i], posout.xx[i]);
-            good = 0;
-            break;
-          }
-        }
-        if (good != 0) {
-          // recursion with PO forced
-          for (i = 0; (sprime[i] = s[i]) < 99; ++i)	// do nothing
-            ;
-          sprime[pos] = 1;
-          Console.Write("{0} Starting recursion with ", depth);
-          Console.Write("{0},{1} forced\n", posout.number[pos], x);
-          CheckBound(posout, sprime, maxch, pos + 1, depth + 1, ref rP1, ref rP2, axles2);
-        }
+  //       // Check if a previously rejected positioned outlet is forced to apply
+  //       good = 1;
+  //       for (i = 0; i < pos; i++) {
+  //         if (s[i] == -1
+  //             && LibDischargeSymmetry.OutletForced( axles2.low[axles2.lev],
+  //                                                   axles2.upp[axles2.lev],
+  //                                                   posout.number[i],
+  //                                                   posout.nolines[i],
+  //                                                   posout.value[i],
+  //                                                   posout.pos[i],
+  //                                                   posout.plow[i],
+  //                                                   posout.pupp[i],
+  //                                                   posout.xx[i]) != 0) {
+  //           Console.Write("{0} Positioned outlet ", depth);
+  //           Console.Write("{0},{1} can't be forced, because it forces {2},{3}\n", posout.number[pos], x, posout.number[i], posout.xx[i]);
+  //           good = 0;
+  //           break;
+  //         }
+  //       }
+  //       if (good != 0) {
+  //         // recursion with PO forced
+  //         for (i = 0; (sprime[i] = s[i]) < 99; ++i)	// do nothing
+  //           ;
+  //         sprime[pos] = 1;
+  //         Console.Write("{0} Starting recursion with ", depth);
+  //         Console.Write("{0},{1} forced\n", posout.number[pos], x);
+  //         CheckBound(posout, sprime, maxch, pos + 1, depth + 1, ref rP1, ref rP2, axles2);
+  //       }
 
-        // rejecting positioned outlet PO
-        Console.Write("{0} Rejecting positioned outlet ", depth);
-        Console.Write("{0},{1}. ", posout.number[pos], x);
-        s[pos] = -1;
-        allowedch -= posout.value[pos];
-        if (allowedch + forcedch <= maxch) {
-          Console.Write("Inequality holds.\n");
-          return true;
-        } else {
-          Console.Write("\n");
-        }
-      }// pos
+  //       // rejecting positioned outlet PO
+  //       Console.Write("{0} Rejecting positioned outlet ", depth);
+  //       Console.Write("{0},{1}. ", posout.number[pos], x);
+  //       s[pos] = -1;
+  //       allowedch -= posout.value[pos];
+  //       if (allowedch + forcedch <= maxch) {
+  //         Console.Write("Inequality holds.\n");
+  //         return true;
+  //       } else {
+  //         Console.Write("\n");
+  //       }
+  //     }// pos
 
-      // 6.
-      Debug.Assert(false,
-        "Unexpected error 101");
-      return false;
+  //     // 6.
+  //     Debug.Assert(false,
+  //       "Unexpected error 101");
+  //     return false;
 
-    }// CheckBound
-  }
+  //   }// CheckBound
+  // }
 
   public static class LibDischargeReduce {
     public const int CARTVERT    = 5 * 12 + 2;     // domain of l_A, u_A, where A is an axle
     public const int MAXELIST    = 134;            // length of edgelist[a][b]
     public const int MAXASTACK   = 5;              // max height of Astack (see "Reduce")
+
+    public record TpAxle(int[][] low, int[][] upp, int lev);
+    public record TpAdjmat(int[][] adj);
+    public record TpEdgelist(int[][][] edg);
+    public record TpQuestion(int[] qa, int[] qb, int[] qc, int[] qd);
+    public record TpVertices(int[] ver);
+    public record TpReduceRet(bool retB, TpAxle axle, bool[] used, TpVertices image);
+    public record TpReducePack1(TpAxle axle, int[] bLow, int[] bUpp, TpAdjmat adjmat);
+    public record TpReducePack2(TpEdgelist edgelist, bool[] used, TpVertices image, TpQuestion[] redquestions);
 
     /*********************************************************************
       Getadjmat
@@ -275,7 +283,7 @@ namespace LibraryCS2 {
     Then adjmat[u][v]=w if u,v,w form a clockwise triangle in G, and
     adjmat[u][v]=-1 if w does not exist.
     *********************************************************************/
-    public static void Getadjmat(int naxles, LibFS.TpAxle aa, LibFS.TpAdjmat adjmat)
+    public static void Getadjmat(int naxles, TpAxle aa, TpAdjmat adjmat)
     {
       int deg, a, b, h, i;
 
@@ -301,7 +309,7 @@ namespace LibraryCS2 {
       DoFan
     Does one fan of adjmat
     *********************************************************************/
-    public static void DoFan(int deg, int i, int k, LibFS.TpAdjmat adjmat)
+    public static void DoFan(int deg, int i, int k, TpAdjmat adjmat)
     {
       int a, b, c, d, e;
 
@@ -350,7 +358,7 @@ namespace LibraryCS2 {
     such that either a<=8 or u=0.
     ***********************************************************************/
     public static void GetEdgelist(
-      int naxles, LibFS.TpAxle aa, LibFS.TpEdgelist edgelist)
+      int naxles, TpAxle aa, TpEdgelist edgelist)
     {
       int a, b, c, d, e, h, i, deg;
 
@@ -403,7 +411,7 @@ namespace LibraryCS2 {
     See "GetEdgeList" above.
     ***********************************************************************/
     public static void AddToList(
-      LibFS.TpEdgelist edgelist, int u, int v, int[] degree)
+      TpEdgelist edgelist, int u, int v, int[] degree)
     {
       /* adds the pair u,v to edgelist */
       int a, b;
@@ -429,7 +437,7 @@ namespace LibraryCS2 {
     See "SubConf" below.
     ***********************************************************************/
     public static bool RootedSubConf(
-      int[] degree, LibFS.TpAdjmat adjmat, LibFS.TpQuestion question, LibFS.TpVertices image, bool[] used, int x, int y, int clockwise)
+      int[] degree, TpAdjmat adjmat, TpQuestion question, TpVertices image, bool[] used, int x, int y, int clockwise)
     {
       int deg, j, w;
 
@@ -477,7 +485,7 @@ namespace LibraryCS2 {
     preserving, and 0 if it is orientation-reversing.
     ***********************************************************************/
     public static bool SubConf(
-      LibFS.TpAdjmat adjmat, int[] degree, LibFS.TpQuestion question, LibFS.TpEdgelist edgelist, LibFS.TpVertices image, bool[] used)
+      TpAdjmat adjmat, int[] degree, TpQuestion question, TpEdgelist edgelist, TpVertices image, bool[] used)
     {
       int i, x, y;
 
@@ -491,16 +499,16 @@ namespace LibraryCS2 {
       return false;
     }/* SubConf */
 
-    public static LibFS.TpReduceRet Reduce(
-      ref LibFS.TpReducePack1 rP1, ref LibFS.TpReducePack2 rP2, LibFS.TpAxle axles)
+    public static TpReduceRet Reduce(
+      ref TpReducePack1 rP1, ref TpReducePack2 rP2, TpAxle axles)
     {
       Array.Copy(axles.low[axles.lev], rP1.axle.low[0], CARTVERT);
       Array.Copy(axles.upp[axles.lev], rP1.axle.upp[0], CARTVERT);
       return ReduceSub(ref rP1, ref rP2);
     }
 
-    public static LibFS.TpReduceRet ReduceSub(
-      ref LibFS.TpReducePack1 aStack, ref LibFS.TpReducePack2 rP2)
+    public static TpReduceRet ReduceSub(
+      ref TpReducePack1 aStack, ref TpReducePack2 rP2)
     {
       int h, i, j, v, redring, redverts;
       int naxles, noconf;
@@ -518,7 +526,7 @@ namespace LibraryCS2 {
             break;
         if (h == noconf) {
           Console.Write("Not reducible\n");
-          LibFS.TpReduceRet retF = new LibFS.TpReduceRet(false, aStack.axle, rP2.used, rP2.image);
+          TpReduceRet retF = new TpReduceRet(false, aStack.axle, rP2.used, rP2.image);
           return retF;
         }
         /* Semi-reducibility test found h-th configuration, say K, appearing */
@@ -561,157 +569,157 @@ namespace LibraryCS2 {
       }//naxles
 
       Console.Write("All possibilities for lower degrees tested\n");
-      LibFS.TpReduceRet retT = new LibFS.TpReduceRet(true, aStack.axle, rP2.used, rP2.image);
+      TpReduceRet retT = new TpReduceRet(true, aStack.axle, rP2.used, rP2.image);
       return retT;
 
     }
   }
 
-  public static class LibDischargeReadRule {
-    public const int MAXVAL     = 12;
-    public const int CARTVERT   = 5 * MAXVAL + 2; // domain of l_A, u_A, where A is an axle
-    public const int INFTY      = 12;             // the "12" in the definition of limited part
-    public const int MAXOUTLETS = 110;            // max number of outlets
-    public const int MAXSYM     = 50;             // max number of symmetries
-    public static readonly int[] U = new int[] {0, 0, 0, 1, 0, 3, 2, 1, 4, 3, 8, 3, 0, 0, 5, 6, 15};
-    public static readonly int[] V = new int[] {0, 0, 1, 0, 2, 0, 1, 3, 2, 5, 2, 9, 4, 12, 0, 1, 1};
+  // public static class LibDischargeReadRule {
+  //   public const int MAXVAL     = 12;
+  //   public const int CARTVERT   = 5 * MAXVAL + 2; // domain of l_A, u_A, where A is an axle
+  //   public const int INFTY      = 12;             // the "12" in the definition of limited part
+  //   public const int MAXOUTLETS = 110;            // max number of outlets
+  //   public const int MAXSYM     = 50;             // max number of symmetries
+  //   public static readonly int[] U = new int[] {0, 0, 0, 1, 0, 3, 2, 1, 4, 3, 8, 3, 0, 0, 5, 6, 15};
+  //   public static readonly int[] V = new int[] {0, 0, 1, 0, 2, 0, 1, 3, 2, 5, 2, 9, 4, 12, 0, 1, 1};
 
-    public static LibFS.TpPosout ReadRuleD(
-      LibFS.TpAxle axles)
-    {
-      int index = 0;
-      int i     = 0;
+  //   public static LibFS.TpPosout ReadRuleD(
+  //     TpAxle axles)
+  //   {
+  //     int index = 0;
+  //     int i     = 0;
 
-      // posout
-      int[] num = new int[2 * MAXOUTLETS];
-      int[] nol = new int[2 * MAXOUTLETS];
-      int[] val = new int[2 * MAXOUTLETS];
-      int j;
-      int[][] pos = new int[2 * MAXOUTLETS][];
-      for (j = 0; j < 2 * MAXOUTLETS; j++) {
-        pos[j] = new int[17];
-      }
-      int[][] low = new int[2 * MAXOUTLETS][];
-      for (j = 0; j < 2 * MAXOUTLETS; j++) {
-        low[j] = new int[17];
-      }
-      int[][] upp = new int[2 * MAXOUTLETS][];
-      for (j = 0; j < 2 * MAXOUTLETS; j++) {
-        upp[j] = new int[17];
-      }
-      int[] xxx = new int[2 * MAXOUTLETS];
-      LibFS.TpPosout ret = new LibFS.TpPosout(num, nol, val, pos, low, upp, xxx);
+  //     // posout
+  //     int[] num = new int[2 * MAXOUTLETS];
+  //     int[] nol = new int[2 * MAXOUTLETS];
+  //     int[] val = new int[2 * MAXOUTLETS];
+  //     int j;
+  //     int[][] pos = new int[2 * MAXOUTLETS][];
+  //     for (j = 0; j < 2 * MAXOUTLETS; j++) {
+  //       pos[j] = new int[17];
+  //     }
+  //     int[][] low = new int[2 * MAXOUTLETS][];
+  //     for (j = 0; j < 2 * MAXOUTLETS; j++) {
+  //       low[j] = new int[17];
+  //     }
+  //     int[][] upp = new int[2 * MAXOUTLETS][];
+  //     for (j = 0; j < 2 * MAXOUTLETS; j++) {
+  //       upp[j] = new int[17];
+  //     }
+  //     int[] xxx = new int[2 * MAXOUTLETS];
+  //     LibFS.TpPosout ret = new LibFS.TpPosout(num, nol, val, pos, low, upp, xxx);
 
-      // adjmat
-      int[][] adj = new int[CARTVERT][];
-      for (j = 0; j < CARTVERT; j++) {
-        adj[j] = new int[CARTVERT];
-      }
-      LibFS.TpAdjmat adjmat = new LibFS.TpAdjmat(adj);
+  //     // adjmat
+  //     int[][] adj = new int[CARTVERT][];
+  //     for (j = 0; j < CARTVERT; j++) {
+  //       adj[j] = new int[CARTVERT];
+  //     }
+  //     TpAdjmat adjmat = new TpAdjmat(adj);
 
-      // read rule
-      var retR = LibFS.readFileRulesD2;
+  //     // read rule
+  //     var retR = LibFS.readFileRulesD2;
 
-      // set data
-      foreach (LibFS.TpRules2Ret line in retR)
-      {
-        if (line.Comment == "invert")
-        {
-          if ( DoOutlet(axles, line.Z[1], line.Z, line.B, ret, index, -1, adjmat ,V, U) ) {
-            index++;
-          }
-          if ( DoOutlet(axles, -line.Z[1], line.Z, line.B, ret, index, -1, adjmat, V, U) ) {
-            index++;
-          }
-        } else {
-          if ( DoOutlet(axles, line.Z[1], line.Z, line.B, ret, index, -1, adjmat ,U, V) ) {
-            index++;
-          }
-          if ( DoOutlet(axles, -line.Z[1], line.Z, line.B, ret, index, -1, adjmat, U, V) ) {
-            index++;
-          }
-        }
-      }
+  //     // set data
+  //     foreach (LibFS.TpRules2Ret line in retR)
+  //     {
+  //       if (line.Comment == "invert")
+  //       {
+  //         if ( DoOutlet(axles, line.Z[1], line.Z, line.B, ret, index, -1, adjmat ,V, U) ) {
+  //           index++;
+  //         }
+  //         if ( DoOutlet(axles, -line.Z[1], line.Z, line.B, ret, index, -1, adjmat, V, U) ) {
+  //           index++;
+  //         }
+  //       } else {
+  //         if ( DoOutlet(axles, line.Z[1], line.Z, line.B, ret, index, -1, adjmat ,U, V) ) {
+  //           index++;
+  //         }
+  //         if ( DoOutlet(axles, -line.Z[1], line.Z, line.B, ret, index, -1, adjmat, U, V) ) {
+  //           index++;
+  //         }
+  //       }
+  //     }
 
-      // データを2回重ねる
-      for (i = 0; i < index; i++)
-      {
-        ret.number[i + index]  = ret.number[i];
-        ret.nolines[i + index] = ret.nolines[i];
-        ret.value[i + index]   = ret.value[i];
-        ret.pos[i].CopyTo(ret.pos[i + index], 0);
-        ret.plow[i].CopyTo(ret.plow[i + index], 0);
-        ret.pupp[i].CopyTo(ret.pupp[i + index], 0);
-        ret.xx[i + index]      = ret.xx[i];
-      }
+  //     // データを2回重ねる
+  //     for (i = 0; i < index; i++)
+  //     {
+  //       ret.number[i + index]  = ret.number[i];
+  //       ret.nolines[i + index] = ret.nolines[i];
+  //       ret.value[i + index]   = ret.value[i];
+  //       ret.pos[i].CopyTo(ret.pos[i + index], 0);
+  //       ret.plow[i].CopyTo(ret.plow[i + index], 0);
+  //       ret.pupp[i].CopyTo(ret.pupp[i + index], 0);
+  //       ret.xx[i + index]      = ret.xx[i];
+  //     }
 
-      return ret;
-    }
+  //     return ret;
+  //   }
 
-    public static bool DoOutlet(
-      LibFS.TpAxle A, int number, int [] z, int [] b, LibFS.TpPosout T, int index, int lineno, LibFS.TpAdjmat adjmat,
-      int[] X, int[] Y)
-    {
-      int i, j, k, u, v, deg;
-      int[] phi = new int[17];
+  //   public static bool DoOutlet(
+  //     TpAxle A, int number, int [] z, int [] b, LibFS.TpPosout T, int index, int lineno, TpAdjmat adjmat,
+  //     int[] X, int[] Y)
+  //   {
+  //     int i, j, k, u, v, deg;
+  //     int[] phi = new int[17];
 
-      LibDischargeReduce.Getadjmat(A.lev, A, adjmat);
-      deg = A.low[A.lev][0];
-      T.nolines[index] = z[0] - 1;
-      T.number[index] = number;
-      for (i = 0; i < 17; i++)
-        phi[i] = -1;
-      if (number > 0) {
-        phi[0] = 1;
-        phi[1] = 0;
-        T.value[index] = 1;
-        k = 1;
-      } else {
-        phi[0] = 0;
-        phi[1] = 1;
-        T.value[index] = -1;
-        k = 0;
-      }
-      T.pos[index][0] = 1;
+  //     LibDischargeReduce.Getadjmat(A.lev, A, adjmat);
+  //     deg = A.low[A.lev][0];
+  //     T.nolines[index] = z[0] - 1;
+  //     T.number[index] = number;
+  //     for (i = 0; i < 17; i++)
+  //       phi[i] = -1;
+  //     if (number > 0) {
+  //       phi[0] = 1;
+  //       phi[1] = 0;
+  //       T.value[index] = 1;
+  //       k = 1;
+  //     } else {
+  //       phi[0] = 0;
+  //       phi[1] = 1;
+  //       T.value[index] = -1;
+  //       k = 0;
+  //     }
+  //     T.pos[index][0] = 1;
 
-      /* compute phi */
-      for (i = j = 0; j < z[0]; i++, j++) {
-        T.plow[index][i] = b[j] / 10;
-        T.pupp[index][i] = b[j] % 10;
-        if (T.pupp[index][i] == 9)
-          T.pupp[index][i] = INFTY;
-        if (T.plow[index][i] == 0)
-          T.plow[index][i] = T.pupp[index][i];
-        /* checking (T2) */
-        //if (T->low[i] > T->upp[i])
-        //  Error("Condition (T2) from def of outlet violated", lineno);
-        /* checking (T3) */
-        //if (T->low[i] < 5 || T->low[i] > 9 || T->upp[i] > INFTY || T->upp[i] == 9)
-        //  Error("Condition (T3) from def of outlet violated", lineno);
-        if (j == k) {
-          if (T.plow[index][k] > deg || T.pupp[index][k] < deg)
-            return false;
-          /* if above true then outlet cannot apply for this degree */
-          i--;
-          continue;
-        }
-        if (j >= 2) {	/* now computing T->pos[i] */
-          u = phi[X[z[j]]];
-          v = phi[Y[z[j]]];
-          //if (u < 0 || u > 5 * deg || v < 0 || v > 5 * deg)
-          //  Error("Rule references illegal vertex", lineno);
-          T.pos[index][i] = phi[z[j]] = adjmat.adj[u][v];
-        }
-        u = T.pos[index][i];
-        //if (u <= 0 || u > 5 * deg)
-        //  Error("Rule uses illegal vertex", lineno);
-        if (u <= deg && T.plow[index][i] == T.pupp[index][i])
-          LibDischargeReduce.DoFan(deg, u, T.plow[index][i], adjmat); /* update adjmat */
-      }
-      /* Condition (T4) is checked in CheckIso */
-      return true;
-    }/* DoOutlet */
-  }
+  //     /* compute phi */
+  //     for (i = j = 0; j < z[0]; i++, j++) {
+  //       T.plow[index][i] = b[j] / 10;
+  //       T.pupp[index][i] = b[j] % 10;
+  //       if (T.pupp[index][i] == 9)
+  //         T.pupp[index][i] = INFTY;
+  //       if (T.plow[index][i] == 0)
+  //         T.plow[index][i] = T.pupp[index][i];
+  //       /* checking (T2) */
+  //       //if (T->low[i] > T->upp[i])
+  //       //  Error("Condition (T2) from def of outlet violated", lineno);
+  //       /* checking (T3) */
+  //       //if (T->low[i] < 5 || T->low[i] > 9 || T->upp[i] > INFTY || T->upp[i] == 9)
+  //       //  Error("Condition (T3) from def of outlet violated", lineno);
+  //       if (j == k) {
+  //         if (T.plow[index][k] > deg || T.pupp[index][k] < deg)
+  //           return false;
+  //         /* if above true then outlet cannot apply for this degree */
+  //         i--;
+  //         continue;
+  //       }
+  //       if (j >= 2) {	/* now computing T->pos[i] */
+  //         u = phi[X[z[j]]];
+  //         v = phi[Y[z[j]]];
+  //         //if (u < 0 || u > 5 * deg || v < 0 || v > 5 * deg)
+  //         //  Error("Rule references illegal vertex", lineno);
+  //         T.pos[index][i] = phi[z[j]] = adjmat.adj[u][v];
+  //       }
+  //       u = T.pos[index][i];
+  //       //if (u <= 0 || u > 5 * deg)
+  //       //  Error("Rule uses illegal vertex", lineno);
+  //       if (u <= deg && T.plow[index][i] == T.pupp[index][i])
+  //         LibDischargeReduce.DoFan(deg, u, T.plow[index][i], adjmat); /* update adjmat */
+  //     }
+  //     /* Condition (T4) is checked in CheckIso */
+  //     return true;
+  //   }/* DoOutlet */
+  // }
 
 }
 
