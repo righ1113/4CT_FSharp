@@ -5,6 +5,7 @@ namespace Reduce
 open System.IO
 open System.Diagnostics
 open FSharp.Data
+open LibraryCS
 
 
 module Const =
@@ -485,6 +486,35 @@ module DReduce =
     (twin2, real, 0, 1y, 0, major, ap, b1, b2)
 
 
+module CReduce =
+  let run (major : Const.TpGConfMajor) ((live : int array), nLive) ((_, _, _, diffangle, sameangle, contract) : Const.TpAnglePack) =
+    Debug.Assert((contract.[0] <> 0),              "       ***  ERROR: NO CONTRACT PROPOSED  ***\n\n")
+    Debug.Assert((nLive = contract.[Const.EDGES]), "       ***  ERROR: DISCREPANCY IN EXTERIOR SIZE  ***\n\n")
+    let mutable start = diffangle.[0].[2]
+    let c         = Array.replicate Const.EDGES 0
+    let forbidden = Array.replicate Const.EDGES 0 // called F in the notes
+    while contract.[start] <> 0 do
+      start <- start - 1
+    c.[start] <- 1
+    let mutable j = start - 1
+    while contract.[j] <> 0 do
+      j <- j - 1
+    let dm = diffangle.[j]
+    let sm = sameangle.[j]
+    c.[j] <- 1
+    let mutable u = 4
+    let imax1 = if dm.[0] >= 4 then 4 else dm.[0]
+    for i in 1..imax1 do
+      u <- u ||| c.[dm.[i]]
+    let imax2 = if sm.[0] >= 4 then 4 else sm.[0]
+    for i in 1..imax2 do
+      u <- u ||| ~~~c.[sm.[i]]
+    forbidden.[j] <- u
+    LibReduceContract.CheckContractSub (forbidden, c, contract, j, start, diffangle, sameangle,
+      major.bigno, major.ring, live, Const.POWER)
+    ()
+
+
 module Re =
   let rec private until p f (a: 'a) = if p a then a else until p f (f a)
 
@@ -522,7 +552,10 @@ module Re =
     let p (_, _, _, _, _, _, _, b1, _) = b1
     until p (DReduce.testMatch >> DReduce.updateLive)
 
-  let private chkCReduce (_, _, _, _, _, _, _, _, b2) = b2
+  let private chkCReduce (twin, _, _, _, _, major, ap, _, b2) =
+    if b2 then ()  // D可約 のときはスルー
+    else       CReduce.run major twin ap
+    b2
 
   let reduce =
     gConfs |> Array.take 12 |> Array.map (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce >> chkCReduce)
