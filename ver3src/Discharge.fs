@@ -476,15 +476,6 @@ module Di =
         let ax1_2 = LibDischargeReduce.TpAxle(low = ax.low, upp = ax.upp, lev = ax.lev)
         let ret   = LibDischargeReduce.Reduce(ax1_2)
         printfn "rRet: %b" ret.retB
-        // CaseSplit.downNosym ax.lev
-        //let ax2  : Const.TpAxle = {low = ax.low; upp = ax.upp; lev = ax.lev - 1}
-        // let ax3  : Const.TpAxle = {low = rp1.axle.low; upp = rp1.axle.upp; lev = rp1.axle.lev}
-        // let rp12 : Const.TpReducePack1 = {axle = ax3; bLow = rp1.bLow; bUpp = rp1.bUpp; adjmat = {adj = rp1.adjmat.adj}}
-        // let mutable out = [||]
-        // for indLine in rp2.redquestions do
-        //   let ret = [|{qa = indLine.qa; qb = indLine.qb; qc = indLine.qc; qd = indLine.qd}|] : Const.TpQuestion array
-        //   out <- Array.append out ret
-        // let rp22 : Const.TpReducePack2 = {edgelist = {edg = rp2.edgelist.edg}; used = rp2.used; image = {ver = rp2.image.ver}; redquestions = out}
         (deg, {ax with lev = ax.lev - 1}, tailTac, lineCnt + 1)
     | _ -> x
 
