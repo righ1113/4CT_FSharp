@@ -96,7 +96,7 @@ namespace LibraryCS2 {
   //   Verifies (H1)
   //   *************************************************************************/
   //   public static bool CheckBound(
-  //     LibFS.TpPosout posout, int[] s, int maxch, int pos, int depth, ref LibFS.TpReducePack1 rP1, ref LibFS.TpReducePack2 rP2, TpAxle axles)
+  //     LibFS.TpPosout posout, int[] s, int maxch, int pos, int depth, ref LibFS.TpReducePack1 rP1, ref LibFS.TpReducePack2 rp2, TpAxle axles)
   //   {
   //     int deg, i, x, good, forcedch, allowedch;
   //     int[] sprime = new int[2 * 110 + 1];
@@ -171,7 +171,7 @@ namespace LibraryCS2 {
 
   //     // 4. check reducibility
   //     if (forcedch > maxch) {
-  //       ret = LibDischargeReduce.Reduce(ref rP1, ref rP2, axles);
+  //       ret = LibDischargeReduce.Reduce(ref rP1, ref rp2, axles);
   //       if (ret.retB == false) {
   //         Console.Write("ihihi\n");
   //         // 381 L5 H  (1,1,3) (2,2,3) (3,3,-3) (4,4,4) (5,5,4) (6,6,1) (7,7,-2)
@@ -238,7 +238,7 @@ namespace LibraryCS2 {
   //         sprime[pos] = 1;
   //         Console.Write("{0} Starting recursion with ", depth);
   //         Console.Write("{0},{1} forced\n", posout.number[pos], x);
-  //         CheckBound(posout, sprime, maxch, pos + 1, depth + 1, ref rP1, ref rP2, axles2);
+  //         CheckBound(posout, sprime, maxch, pos + 1, depth + 1, ref rP1, ref rp2, axles2);
   //       }
 
   //       // rejecting positioned outlet PO
@@ -275,6 +275,9 @@ namespace LibraryCS2 {
     public record TpReduceRet(bool retB, TpAxle axle, bool[] used, TpVertices image);
     public record TpReducePack1(TpAxle axle, int[] bLow, int[] bUpp, TpAdjmat adjmat);
     public record TpReducePack2(TpEdgelist edgelist, bool[] used, TpVertices image, TpQuestion[] redquestions);
+
+    public static TpReducePack1 rp1;
+    public static TpReducePack2 rp2;
 
     /*********************************************************************
       Getadjmat
@@ -499,46 +502,45 @@ namespace LibraryCS2 {
       return false;
     }/* SubConf */
 
-    public static TpReduceRet Reduce(
-      ref TpReducePack1 rP1, ref TpReducePack2 rP2, TpAxle axles)
+    public static void ReduceInit(TpReducePack1 rp1in, TpReducePack2 rp2in)
     {
-      Array.Copy(axles.low[axles.lev], rP1.axle.low[0], CARTVERT);
-      Array.Copy(axles.upp[axles.lev], rP1.axle.upp[0], CARTVERT);
-      return ReduceSub(ref rP1, ref rP2);
+        rp1 = rp1in;
+        rp2 = rp2in;
     }
 
-    public static TpReduceRet ReduceSub(
-      ref TpReducePack1 aStack, ref TpReducePack2 rP2)
+    public static TpReduceRet Reduce(TpAxle axles)
     {
       int h, i, j, v, redring, redverts;
       int naxles, noconf;
 
+      Array.Copy(axles.low[axles.lev], rp1.axle.low[0], CARTVERT);
+      Array.Copy(axles.upp[axles.lev], rp1.axle.upp[0], CARTVERT);
       Console.Write("Testing reducibility. Putting input axle on stack.\n");
 
       noconf = 633;
       for (naxles = 1; naxles > 0 && naxles < MAXASTACK;) {
-        --naxles; //CopyAxle(B, Astack[--naxles]);
+        --naxles; //CopyAxle(B, rp1[--naxles]);
         Console.Write("Axle from stack:");
-        Getadjmat(naxles, aStack.axle, aStack.adjmat);
-        GetEdgelist(naxles, aStack.axle, rP2.edgelist);
+        Getadjmat(naxles, rp1.axle, rp1.adjmat);
+        GetEdgelist(naxles, rp1.axle, rp2.edgelist);
         for (h = 0; h < noconf; ++h)
-          if (SubConf(aStack.adjmat, aStack.axle.upp[naxles], rP2.redquestions[h], rP2.edgelist, rP2.image, rP2.used))
+          if (SubConf(rp1.adjmat, rp1.axle.upp[naxles], rp2.redquestions[h], rp2.edgelist, rp2.image, rp2.used))
             break;
         if (h == noconf) {
           Console.Write("Not reducible\n");
-          TpReduceRet retF = new TpReduceRet(false, aStack.axle, rP2.used, rP2.image);
+          TpReduceRet retF = new TpReduceRet(false, rp1.axle, rp2.used, rp2.image);
           return retF;
         }
         /* Semi-reducibility test found h-th configuration, say K, appearing */
-        redverts = rP2.redquestions[h].qa[1];
-        redring  = rP2.redquestions[h].qb[1];
+        redverts = rp2.redquestions[h].qa[1];
+        redring  = rp2.redquestions[h].qb[1];
         /* the above are no vertices and ring-size of free completion of K */
         /* could not use conf[h][0][0], because conf may be NULL           */
 
         Console.Write("Conf({0},{1},{2}): ", h / 70 + 1, (h % 70) / 7 + 1, h % 7 + 1);
         for (j = 1; j <= redverts; j++) {
-          if (rP2.image.ver[j] != -1)
-              Console.Write(" {0}({1})", rP2.image.ver[j], j);
+          if (rp2.image.ver[j] != -1)
+              Console.Write(" {0}({1})", rp2.image.ver[j], j);
         }
         Console.Write("\n");
         //if (conf != NULL)
@@ -546,22 +548,22 @@ namespace LibraryCS2 {
         /* Double-check isomorphism */
 
         for (i = redring + 1; i <= redverts; i++) {
-          v = rP2.image.ver[i];
-          if (aStack.axle.low[naxles][v] == aStack.axle.upp[naxles][v])
+          v = rp2.image.ver[i];
+          if (rp1.axle.low[naxles][v] == rp1.axle.upp[naxles][v])
             continue;
           Console.Write("Lowering upper bound of vertex ");
-          Console.Write("{0} to {1} and adding to stack\n", v, aStack.axle.upp[naxles][v] - 1);
+          Console.Write("{0} to {1} and adding to stack\n", v, rp1.axle.upp[naxles][v] - 1);
 
           Debug.Assert((naxles < MAXASTACK),
             "More than %d elements in axle stack needed\n");
 
           // コピー
           if (naxles != 0) {
-            Array.Copy(aStack.axle.low[naxles - 1], aStack.axle.low[naxles], CARTVERT);
-            Array.Copy(aStack.axle.upp[naxles - 1], aStack.axle.upp[naxles], CARTVERT);
+            Array.Copy(rp1.axle.low[naxles - 1], rp1.axle.low[naxles], CARTVERT);
+            Array.Copy(rp1.axle.upp[naxles - 1], rp1.axle.upp[naxles], CARTVERT);
           }
           // デクリメント
-          aStack.axle.upp[naxles][v]--;
+          rp1.axle.upp[naxles][v]--;
           // インクリメント
           naxles++;
         }
@@ -569,7 +571,7 @@ namespace LibraryCS2 {
       }//naxles
 
       Console.Write("All possibilities for lower degrees tested\n");
-      TpReduceRet retT = new TpReduceRet(true, aStack.axle, rP2.used, rP2.image);
+      TpReduceRet retT = new TpReduceRet(true, rp1.axle, rp2.used, rp2.image);
       return retT;
 
     }

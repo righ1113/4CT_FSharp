@@ -11,8 +11,8 @@ open Discharge
 let main argv =
   let ret1 = Re.reduce
   printfn "reduce() = %A" ret1
-  //let ret2 = Di.discharge 7
-  //printfn "discharge() = %b" ret2
+  let ret2 = Di.discharge 7
+  printfn "discharge() = %b" ret2
   0
 
 
