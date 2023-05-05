@@ -465,22 +465,20 @@ module DReduce =
     let isUpdate ncols ((live : int array), nLive) nReal =
       let mutable newnlive = 0
       let ret =
-        try
-          if live.[0] > 1 then live.[0] <- 15
-          for i = 0 to ncols - 1 do
-            if live.[i] <> 15 then live.[i] <- 0
-            else
-              newnlive <- newnlive + 1; live.[i] <- 1;
-          printf "               %d\n" nReal // right
-          printf "            %9d" newnlive  // left
-          if (newnlive < nLive) && (newnlive > 0) then raise (Return 0)
+        if live.[0] > 1 then live.[0] <- 15
+        for i = 0 to ncols - 1 do
+          if live.[i] <> 15 then live.[i] <- 0
+          else
+            newnlive <- newnlive + 1; live.[i] <- 1;
+        printf "               %d\n" nReal // right
+        printf "            %9d" newnlive  // left
+        if (newnlive < nLive) && (newnlive > 0) then 0
+        else
           if 0 = newnlive then
             printf "\n\n\n                  ***  D-reducible  ***\n\n"
           else
             printf "\n\n\n                ***  Not D-reducible  ***\n"
           1
-        with
-        | Return x -> x
       (1 = ret, 0 = newnlive, (live, newnlive))
     let (b1, b2, twin2) = isUpdate (major.ncodes) twin nReal
     (twin2, real, 0, 1y, 0, major, ap, b1, b2)
