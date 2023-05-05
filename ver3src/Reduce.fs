@@ -52,8 +52,7 @@ module EdgeNo =
     | Return x -> x;
   // 1. strip()
   let run (gConf: int array array) (major: Const.TpGConfMajor) =
-    let verts  = major.verts
-    let ring   = major.ring
+    let verts, ring  = major.verts, major.ring
     let edgeNo: Const.TpedgeNo = Array.init Const.EDGES (fun _ -> Array.zeroCreate Const.EDGES)
     // stripSub1
     let mutable u = 0
@@ -68,8 +67,7 @@ module EdgeNo =
     let max = Array.replicate Const.MVERTS 0
     (* 2. *)
     for _ = (ring + 1) to verts do
-      let mutable maxint = 0
-      let mutable maxes  = 0
+      let mutable maxint, maxes = 0, 0
       (* 2_1. *)
       for v = (ring + 1) to verts do
         try
@@ -86,10 +84,9 @@ module EdgeNo =
       for h = 1 to maxes do
         let d = gConf.[max.[h] + 2].[1] in
         if d > maxdeg then maxdeg <- d; best <- max.[h]
-      let grav = gConf.[best + 2] in
+      let grav = gConf.[best + 2]
       let d = grav.[1]
-      let mutable first = 1
-      let mutable previous = done0.[grav.[d + 1]]
+      let mutable first, previous = 1, done0.[grav.[d + 1]]
       (* 2_3. *)
       try
         while previous || not done0.[grav.[first + 1]] do
@@ -128,8 +125,7 @@ module EdgeNo =
           if inter > maxint then maxint <- inter; best <- v
         with
         | Continue -> ()
-      let grav = gConf.[best+2]
-      let u = if best > 1 then best - 1 else ring
+      let grav, u = gConf.[best+2], if best > 1 then best - 1 else ring
       if done0.[u] then
         for h = grav.[0+1] - 1 downto 2 do
           edgeNo.[best].[grav.[h+1]] <- term
@@ -175,11 +171,8 @@ module Angles =
             if v <= gConf.[1].[1] && h = gConf.[v + 2].[1] then raise Continue
             if h >= Array.length gConf.[v + 2] then raise Break
             let i = if h < gConf.[v + 2].[1] then h + 1 else 1
-            let u = gConf.[v + 2].[h + 1]
-            let w = gConf.[v + 2].[i + 1]
-            let a = edgeNo.[v].[w]
-            let b = edgeNo.[u].[w]
-            let c = edgeNo.[u].[v]
+            let u, w = gConf.[v + 2].[h + 1], gConf.[v + 2].[i + 1]
+            let a, b, c = edgeNo.[v].[w], edgeNo.[u].[w], edgeNo.[u].[v]
             // どっちかが0なら通過
             Debug.Assert((contract.[a] = 0 || contract.[b] = 0), "***  ERROR: CONTRACT IS NOT SPARSE  ***")
             anglesSub2Sub a b c |> ignore
@@ -198,8 +191,7 @@ module Angles =
       while v <= verts do
         try
           // v is a candidate triad
-          let mutable a = 0
-          let mutable i = 1
+          let mutable a, i = 0, 1
           while i <= gConf.[v + 2].[1] do
             let u = gConf.[v + 2].[i + 1]
             try
@@ -232,8 +224,7 @@ module Angles =
     contract.[0]           <- major.cont0 // number of edges in contract
     contract.[Const.EDGES] <- major.contE
     for i in 1..contract.[0] do
-      let u = gConf.[2].[2 * i - 1]
-      let v = gConf.[2].[2 * i]
+      let u, v = gConf.[2].[2 * i - 1], gConf.[2].[2 * i]
       Debug.Assert((edgeNo.[u].[v] >= 1), "         ***  ERROR: CONTRACT CONTAINS NON-EDGE  ***\n\n")
       contract.[edgeNo.[u].[v]] <- 1
     for i in 0..(Const.EDGES - 1) do
@@ -285,8 +276,7 @@ module MLive =
     for i = 1 to major.ring do
       let sum = 7 - col.[angle.[i].[1]] - col.[angle.[i].[2]]
       weight.[sum] <- weight.[sum] + Const.POWER.[i]
-    let mutable min = weight.[4]
-    let mutable max = weight.[4]
+    let mutable min, max = weight.[4], weight.[4]
     for i = 1 to 2 do
       let w = weight.[i]
       if w < min then min <- w
@@ -332,9 +322,7 @@ module DReduce =
   let private interval    = Array.replicate 10 0
   let private weight      = Array.init 16 (fun _ -> Array.zeroCreate 4)
   let private matchweight = Array.init 16 (fun _ -> Array.init 16 (fun _ -> Array.zeroCreate 4))
-  let mutable private nReal2 = 0
-  let mutable private bit2 = 1y
-  let mutable private realTerm2 = 0
+  let mutable private nReal2, bit2, realTerm2 = 0, 1y, 0
   let isStillReal col (choice : int array) depth (live : int array) on =
     let mutable nTwisted = 0
     let mutable nUnTwisted = 0
@@ -413,8 +401,7 @@ module DReduce =
     let mutable newN = 0
     let newInterval = Array.replicate 10 0
     for r = 1 to n do
-      let lower = interval2.[2 * r - 1]
-      let upper = interval2.[2 * r]
+      let lower, upper = interval2.[2 * r - 1], interval2.[2 * r]
       for i = lower + 1 to upper do
         for j = lower to i - 1 do
           for h = 0 to 3 do weight.[depth + 1].[h] <- matchweight.[i].[j].[h]
@@ -497,8 +484,7 @@ module CReduce =
     let mutable j = start - 1
     while contract.[j] <> 0 do
       j <- j - 1
-    let dm = diffangle.[j]
-    let sm = sameangle.[j]
+    let dm, sm = diffangle.[j], sameangle.[j]
     c.[j] <- 1
     let mutable u = 4
     let imax1 = if dm.[0] >= 4 then 4 else dm.[0]
@@ -522,8 +508,7 @@ module Re =
   let private gConfs = readFileGoodConfsR
 
   let private makeGConfMajor (gConf: int array array) =
-    let verts0 = gConf.[1].[0]
-    let ring0  = gConf.[1].[1]
+    let verts0, ring0 = gConf.[1].[0], gConf.[1].[1]
     ( gConf, ({ verts  = verts0;
                 ring   = ring0;
                 term   = 3 * (verts0 - 1) - ring0;

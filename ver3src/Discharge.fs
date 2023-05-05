@@ -45,8 +45,7 @@ module CaseSplit =
   let run deg (ax : Const.TpAxle) n m lineCnt =
     ax.low.[ax.lev+1] <- Array.copy ax.low.[ax.lev]
     ax.upp.[ax.lev+1] <- Array.copy ax.upp.[ax.lev]
-    let aLowN = ax.low.[ax.lev].[n]
-    let aUppN = ax.upp.[ax.lev].[n]
+    let aLowN, aUppN = ax.low.[ax.lev].[n], ax.upp.[ax.lev].[n]
     if m > 0 then
       // new lower bound
       if aLowN >= m || m > aUppN then
@@ -98,7 +97,7 @@ module Apply =
     try
       let x = xx - 1
       for i = 0 to sym.nolines.[ii] - 1 do
-        let mutable p = sym.pos.[ii].[i];
+        let mutable p = sym.pos.[ii].[i]
         p <- if x + (p - 1) % deg < deg then p + x else p + x - deg
         if sym.plow.[ii].[i] > ax.low.[ax.lev].[p] || sym.pupp.[ii].[i] < ax.upp.[ax.lev].[p] then raise (Return 0)
       sym.value.[ii]
@@ -108,7 +107,7 @@ module Apply =
     try
       let x = xx - 1
       for i = 0 to sym.nolines.[ii] - 1 do
-        let mutable p = sym.pos.[ii].[i];
+        let mutable p = sym.pos.[ii].[i]
         p <- if x + (p - 1) % deg < deg then p + x else p + x - deg
         if sym.plow.[ii].[i] > ax.upp.[ax.lev].[p] || sym.pupp.[ii].[i] < ax.low.[ax.lev].[p] then raise (Return 0)
       sym.value.[ii]
@@ -118,8 +117,7 @@ module Apply =
     try
       let x = xx - 1
       for i = 0 to sym.nolines.[ii] - 1 do
-        let mutable q = 0
-        let mutable p = sym.pos.[ii].[i];
+        let mutable q, p = 0, sym.pos.[ii].[i]
         p <- if x + (p - 1) % deg < deg then p + x else p + x - deg
         if p < 1 || p > 2 * deg then raise (Return 0)
         elif p <= deg           then q <- deg - p + 1
@@ -162,10 +160,7 @@ module Adjmat =
       adjmat.[c].[a] <- b
   let doFan deg i k =
     let a = if i = 1 then 2 * deg else deg + i - 1
-    let b = deg + i
-    let c = 2 * deg + i
-    let d = 3 * deg + i
-    let e = 4 * deg + i
+    let b, c, d, e = deg + i, 2 * deg + i, 3 * deg + i, 4 * deg + i
     match k with
     | 5 ->  chgAdjmat i a b Backward
     | 6 ->  chgAdjmat i a c Backward
@@ -284,8 +279,7 @@ module Dischg =
   let mutable private initEnd = false
   let rec private dischgCoreSub5 deg (ax : Const.TpAxle) forcedch allowedch (s : int array) maxch pos0 depth =
     try
-      let mutable pos = pos0
-      let mutable allowedch2 = allowedch
+      let mutable pos, allowedch2 = pos0, allowedch
       while s.[pos] < 99 do
         try
           if s.[pos] <> 0 || posout.value.[pos] < 0 then pos <- pos + 1; raise Continue
@@ -325,9 +319,7 @@ module Dischg =
     | Return x -> x
   and private dischgCore deg (ax: Const.TpAxle) (s : int array) maxch pos depth =
     // 1. compute forced and permitted rules, allowedch, forcedch, update s
-    let mutable forcedch = 0
-    let mutable allowedch = 0
-    let mutable i = 0
+    let mutable forcedch, allowedch, i = 0, 0, 0
     while s.[i] < 99 do
       try
         if   s.[i] > 0           then forcedch <- forcedch + posout.value.[i]
@@ -455,7 +447,8 @@ module Di =
   let private caseSplit x =
     match x with
     | (deg, (ax : Const.TpAxle), (_ :: "C" :: nStr :: mStr :: _) :: tailTac, lineCnt) ->
-        let n = int (Int32.Parse nStr) in let m = int (Int32.Parse mStr) in let ret = CaseSplit.run deg ax n m lineCnt
+        let n, m = int (Int32.Parse nStr), int (Int32.Parse mStr)
+        let ret = CaseSplit.run deg ax n m lineCnt
         (deg, ret, tailTac, lineCnt + 1)
     | _ -> x
   let private apply x =
@@ -475,7 +468,7 @@ module Di =
     | (deg, (ax : Const.TpAxle), (_ :: "R" :: _) :: tailTac, lineCnt) ->
         let ax1_2 = LibDischargeReduce.TpAxle(low = ax.low, upp = ax.upp, lev = ax.lev)
         let ret   = LibDischargeReduce.Reduce(ax1_2)
-        printfn "rRet: %b" ret.retB
+        printfn "##### rRet: %b #####" ret.retB
         (deg, {ax with lev = ax.lev - 1}, tailTac, lineCnt + 1)
     | _ -> x
 
