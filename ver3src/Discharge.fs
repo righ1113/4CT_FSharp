@@ -23,14 +23,9 @@ module Const =
   type TpPosout    = {number: int array; nolines: int array; value: int array; pos: int array array; plow: int array array; pupp: int array array; xx: int array}
   type TpDiRules   = JsonProvider<"""{"a":[0], "b":[0], "c":[8], "d":[[6]], "e":[[6]], "f":[[6]], "g":[6]}""">
   type TpDiRules2  = JsonProvider<"""[{"b":[0], "z":[0], "c":"comment"}]""">
-  type TpDiConfs   = JsonProvider<"""[{"a":[0], "b":[0], "c":[8], "d":[6]}]""">
   type TpRules2Ret = {B: int array; Z: int array; Comment: string}
-  type TpAdjmat      = {adj: int array array}
-  type TpEdgelist    = {edg: int array array array}
-  type TpVertices    = {ver: int array}
-  type TpQuestion    = {qa: int array; qb: int array; qc: int array; qd: int array}
-  type TpReducePack1 = {axle: TpAxle; bLow: int array; bUpp: int array; adjmat: TpAdjmat}
-  type TpReducePack2 = {edgelist: TpEdgelist; used: bool array; image: TpVertices; redquestions: TpQuestion array}
+  type TpDiConfs   = JsonProvider<"""[{"a":[0], "b":[0], "c":[8], "d":[6]}]""">
+  type TpConfFmt   = JsonProvider<"[[[1]]]">
 
 
 module CaseSplit =
@@ -419,14 +414,14 @@ module Di =
         |> List.map ((fun str -> str.Split " ")
                       >> Array.toList
                       >> (List.filter (not << String.IsNullOrEmpty)))
-    let readFileGoodConfsD =
-      let mutable out = [||]
-      let ind = Const.TpDiConfs.Parse <| File.ReadAllText "data/DiGoodConfs.txt"
-      for indLine in ind do
-        let ret = LibDischargeReduce.TpQuestion(qa = indLine.A, qb = indLine.B, qc = indLine.C, qd = indLine.D)
-        //let ret = [|{qa = indLine.A; qb = indLine.B; qc = indLine.C; qd = indLine.D}|] : LibDischargeReduce.TpQuestion array
-        out <- Array.append out [|ret|]
-      out
+    // let readFileGoodConfsD =
+    //   let mutable out = [||]
+    //   let ind = Const.TpDiConfs.Parse <| File.ReadAllText "data/DiGoodConfs.txt"
+    //   for indLine in ind do
+    //     let ret = LibDischargeReduce.TpQuestion(qa = indLine.A, qb = indLine.B, qc = indLine.C, qd = indLine.D)
+    //     //let ret = [|{qa = indLine.A; qb = indLine.B; qc = indLine.C; qd = indLine.D}|] : LibDischargeReduce.TpQuestion array
+    //     out <- Array.append out [|ret|]
+    //   out
     //let tac2: string list list = [["Degree"; "7"]; ["L0"; "C"; "1"; "-5"]; ["Q.E.D."]]
     // TpAxle
     let axles0    = Array.init Const.MAXLEV (fun _ -> Array.zeroCreate Const.CARTVERT)
@@ -444,19 +439,17 @@ module Di =
     let edgelist = Array.init 12 (fun _ -> Array.init 9 (fun _ -> Array.zeroCreate Const.MAXELIST))
     let used     = Array.replicate Const.CARTVERT false
     let image    = Array.replicate Const.CARTVERT 0
-    //let qU       = Array.replicate Const.VERTS 0
-    //let qV       = Array.replicate Const.VERTS 0
-    //let qZ       = Array.replicate Const.VERTS 0
-    //let qXi      = Array.replicate Const.VERTS 0
-    let graphs = readFileGoodConfsD
+    // let graphs = readFileGoodConfsD
     let axlepk = LibDischargeReduce.TpAxle(low = aSLow, upp = aSUpp, lev = 0)
     let mutable redpk1 = LibDischargeReduce.TpReducePack1(axle = axlepk, bLow = bLow, bUpp = bUpp, adjmat = LibDischargeReduce.TpAdjmat(adj = adjmat))
     let mutable redpk2 = LibDischargeReduce.TpReducePack2(
       edgelist = LibDischargeReduce.TpEdgelist(edg = edgelist),
       used = used,
-      image = LibDischargeReduce.TpVertices(ver = image),
-      redquestions = graphs)
-    LibDischargeReduce.ReduceInit(redpk1, redpk2)
+      image = LibDischargeReduce.TpVertices(ver = image))
+    let readFileGoodConfs = File.ReadAllText "data/GoodConfs.txt" |> Const.TpConfFmt.Parse
+    let ret = LibDischargeReduce.ReduceInit(redpk1, redpk2, readFileGoodConfs)
+    // for i = 0 to 632 do
+    //   printfn "%A %A %A %A" ret.[i].qa ret.[i].qb ret.[i].qc ret.[i].qd
     (deg, axles, List.tail readFileTacticsD, 2)
 
   let private caseSplit x =

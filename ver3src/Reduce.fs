@@ -519,7 +519,7 @@ module Re =
   let rec private until p f (a: 'a) = if p a then a else until p f (f a)
 
   let private readFileGoodConfsR =
-    File.ReadAllText "data/ReGoodConfs.txt"
+    File.ReadAllText "data/GoodConfs.txt"
     |> Const.TpConfFmt.Parse
   let private gConfs = readFileGoodConfsR
 

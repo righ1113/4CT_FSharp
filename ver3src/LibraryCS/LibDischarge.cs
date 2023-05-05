@@ -266,6 +266,8 @@ namespace LibraryCS2 {
     public const int CARTVERT    = 5 * 12 + 2;     // domain of l_A, u_A, where A is an axle
     public const int MAXELIST    = 134;            // length of edgelist[a][b]
     public const int MAXASTACK   = 5;              // max height of Astack (see "Reduce")
+    public const int VERTS       = 27;	/* max number of vertices in a free completion + 1 */
+    public const int DEG         = 13;	/* max degree of a vertex in a free completion + 1, must be at least 13 because of row 0 */
 
     public record TpAxle(int[][] low, int[][] upp, int lev);
     public record TpAdjmat(int[][] adj);
@@ -274,10 +276,12 @@ namespace LibraryCS2 {
     public record TpVertices(int[] ver);
     public record TpReduceRet(bool retB, TpAxle axle, bool[] used, TpVertices image);
     public record TpReducePack1(TpAxle axle, int[] bLow, int[] bUpp, TpAdjmat adjmat);
-    public record TpReducePack2(TpEdgelist edgelist, bool[] used, TpVertices image, TpQuestion[] redquestions);
+    public record TpReducePack2(TpEdgelist edgelist, bool[] used, TpVertices image);
+    // typedef long tp_confmat[VERTS][DEG];
 
     public static TpReducePack1 rp1;
     public static TpReducePack2 rp2;
+    public static TpQuestion[] redquestions = new TpQuestion[633];
 
     /*********************************************************************
       Getadjmat
@@ -502,10 +506,118 @@ namespace LibraryCS2 {
       return false;
     }/* SubConf */
 
-    public static void ReduceInit(TpReducePack1 rp1in, TpReducePack2 rp2in)
+    /*********************************************************************
+            GetQuestion
+    Computes a question Q=(Q[0],Q[1],...,Q[n]) for L. Moreover, sets
+    Q[1].u to be the number of vertices of the free completion of L,
+    and Q[1].v to be the ring-size of L. Also sets Q[n+1].u=-1 to
+    indicate end
+    *********************************************************************/
+    public static void GetQuestion(int[][] L, TpQuestion Q) {
+      int nverts, max, ring;
+      bool[] found = new bool[VERTS];
+      int d, g, h, i, j, r, t, u, v, w, best, secondbest, nfound, search;
+
+      nverts = Q.qa[1] = L[0+1][0];
+      ring   = Q.qb[1] = L[0+1][1];
+      for (v = 0; v <= nverts; v++)
+        found[v] = false;
+      for (best = 0, max = 0, v = ring + 1; v <= nverts; v++) {
+        if (L[v+2][0+1] > max) {
+          max = L[v+2][0+1];
+          best = v;
+          // Console.Write("aaaaaaaaa {0} {1}\n", max, best);
+        }
+      }
+      Q.qc[0] = best;
+      Q.qd[0] = L[best+2][0+1];
+      found[best] = true;
+      for (secondbest = 0, max = 0, i = 1; i <= L[best+2][0+1]; i++) {
+        v = L[best+2][i+1];
+        if (v <= ring)
+          continue;
+        if (L[v+2][0+1] > max) {
+          max = L[v+2][0+1];
+          secondbest = v;
+        }
+      }
+      Q.qc[1] = secondbest;
+      Q.qd[1] = L[secondbest+2][0+1];
+      found[secondbest] = true;
+      nfound = 2;
+      for (search = 0; search < nfound; search++) {
+        v = Q.qc[search];
+        if (v <= ring)
+          continue;
+        d = L[v+2][0+1];
+        for (i = 1; !found[L[v+2][i+1]]; i++);
+        for (u = 0, h = (i == 1) ? d : i - 1; h != i; h = (h == 1) ? d : h - 1) {
+          u = L[v+2][h+1];
+          if (u <= ring)
+            break;
+          if (found[u])
+            continue;
+          Q.qc[nfound] = u;
+          Q.qd[nfound] = u > ring ? L[u+2][0+1] : 0;
+          Q.qa[nfound] = L[v+2][(h == d) ? 1+1 : h + 1+1];
+          Q.qb[nfound] = v;
+          nfound++;
+          found[u] = true;
+        }
+        if (h == i)
+        continue;
+        for (j = (i == d) ? 1 : i + 1;; j = (j == d) ? 1 : j + 1) {
+          w = L[v+2][j+1];
+          if (w <= ring)
+            break;
+          if (found[w])
+            continue;
+          Q.qc[nfound] = w;
+          Q.qd[nfound] = w > ring ? L[w+2][0+1] : 0;
+          Q.qa[nfound] = v;
+          Q.qb[nfound] = L[v+2][(j == 1) ? d+1 : j - 1 +1];
+          nfound++;
+          found[w] = true;
+        }
+        r = (h >= j) ? h - j : h - j + d;
+        if (r <= 2)
+          continue;
+        Q.qc[nfound] = u;
+        Q.qd[nfound] = u > ring ? L[u+2][0+1] : 0;
+        Q.qa[nfound] = L[v+2][(h == d) ? 1+1 : h + 1+1];
+        Q.qb[nfound] = v;
+        nfound++;
+        for (g = (h == 1) ? d : h - 1; g != j; g = (g == 1) ? d : g - 1) {
+          t = L[v+2][g+1];
+          // if ((t <= ring) || (found[t])) {
+          //   (void) printf("error in getquestions\n");
+          //   exit(1);
+          // }
+          Q.qc[nfound] = t;
+          Q.qd[nfound] = t > ring ? L[t+2][0+1] : 0;
+          Q.qa[nfound] = Q.qc[nfound - 1];
+          Q.qb[nfound] = v;
+          nfound++;
+          found[t] = true;
+        }
+      }
+      Q.qa[nfound] = -1;	/* indicates end */
+    }/* GetQuestion */
+
+    public static TpQuestion[] ReduceInit(TpReducePack1 rp1in, TpReducePack2 rp2in, int[][][] gConfs)
     {
-        rp1 = rp1in;
-        rp2 = rp2in;
+      int i;
+      for (i = 0; i < 633; i++) {
+        redquestions[i] = new TpQuestion(new int[VERTS], new int[VERTS], new int[VERTS], new int[VERTS]);
+      }
+      for (i = 0; i < 633; i++) {
+        GetQuestion(gConfs[i], redquestions[i]);
+      }
+      // シャローコピーなのか？
+      rp1 = rp1in;
+      rp2 = rp2in;
+
+      return redquestions;
     }
 
     public static TpReduceRet Reduce(TpAxle axles)
@@ -524,7 +636,7 @@ namespace LibraryCS2 {
         Getadjmat(naxles, rp1.axle, rp1.adjmat);
         GetEdgelist(naxles, rp1.axle, rp2.edgelist);
         for (h = 0; h < noconf; ++h)
-          if (SubConf(rp1.adjmat, rp1.axle.upp[naxles], rp2.redquestions[h], rp2.edgelist, rp2.image, rp2.used))
+          if (SubConf(rp1.adjmat, rp1.axle.upp[naxles], redquestions[h], rp2.edgelist, rp2.image, rp2.used))
             break;
         if (h == noconf) {
           Console.Write("Not reducible\n");
@@ -532,8 +644,8 @@ namespace LibraryCS2 {
           return retF;
         }
         /* Semi-reducibility test found h-th configuration, say K, appearing */
-        redverts = rp2.redquestions[h].qa[1];
-        redring  = rp2.redquestions[h].qb[1];
+        redverts = redquestions[h].qa[1];
+        redring  = redquestions[h].qb[1];
         /* the above are no vertices and ring-size of free completion of K */
         /* could not use conf[h][0][0], because conf may be NULL           */
 
