@@ -348,7 +348,7 @@ namespace LibraryCS {
       return true;
     }
     public static void Checkreality(
-      int depth, int[][] weight, int[] live, int[] real, ref int pnreal, int ring, int basecol, int on, ref sbyte pbit, ref int prealterm, int nchar)
+      int depth, int[][] weight, int[] live, sbyte[] real, ref int pnreal, int ring, int basecol, int on, ref sbyte pbit, ref int prealterm, int nchar)
     {
       /* For a given matching M, it runs through all signings, and checks which of
       * them have the property that all associated colourings belong to "live". It

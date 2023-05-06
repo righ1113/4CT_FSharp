@@ -397,8 +397,10 @@ module DReduce =
       with
       | Continue -> ()
     true
-  let rec augment n (interval2 : int array) depth live real baseCol on major =
-    checkReality depth live real baseCol on major |> ignore
+  let rec augment n (interval2 : int array) depth live real baseCol on (major : Const.TpGConfMajor) =
+    let on2 = if on then 1 else 0
+    LibReduceUpdate.Checkreality(depth, weight, live, real, &nReal2, major.ring, baseCol, on2, &bit2, &realTerm2, major.nchar)
+    //checkReality depth live real baseCol on major |> ignore
     let mutable newN = 0
     let newInterval = Array.replicate 10 0
     for r = 1 to n do
