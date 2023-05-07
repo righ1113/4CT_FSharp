@@ -24,7 +24,7 @@ module Const =
   type TpGConfMajor  = {verts: int; ring: int; term: int; edges: int; claim: int; cont0: int; contE: int; bigno: int; ncodes: int; nchar: int;}
   type TpAnglePack   = int array array * TpedgeNo * TpAngle * TpAngle * TpAngle * int array
   type TpLiveTwin    = int array * int
-  type TpLiveState   = TpLiveTwin * int8 array * int * int8 * int * TpGConfMajor * TpAnglePack * bool * bool
+  type TpLiveState   = TpLiveTwin * int8 array * int * TpGConfMajor * TpAnglePack * bool * bool
   type TpConfFmt     = JsonProvider<"[[[1]]]">
 
 
@@ -271,13 +271,13 @@ module DReduce =
           if i > j + 1     then newN <- newN + 1; newInterval.[h] <- j + 1; h <- h + 1; newInterval.[h] <- i - 1
           augment newN newInterval (depth + 1) live real baseCol on major |> ignore
     true
-  let testMatch ((live, nLive), real, nReal, bit, realTerm, (major : Const.TpGConfMajor), d, b1, b2) =
+  let testMatch ((live, nLive), real, nReal, (major : Const.TpGConfMajor), d, b1, b2) =
     // /* "nReal" will be the number of balanced signed matchings such that all associated colourings belong to "live",
     // * ie the total number of nonzero bits in the entries of "real" */
     let mutable n = 0
     nReal2    <- nReal
-    bit2      <- bit
-    realTerm2 <- realTerm
+    bit2      <- 1y
+    realTerm2 <- 0
     // /* First, it generates the matchings not incident with the last ring edge */
     for a = 2 to major.ring do
       for b = 1 to a - 1 do
@@ -305,9 +305,9 @@ module DReduce =
       if b >= 3 then              n <- 1;     interval.[1] <- 1;             interval.[2]     <- b - 1
       if major.ring >= b + 3 then n <- n + 1; interval.[2 * n - 1] <- b + 1; interval.[2 * n] <- major.ring - 1
       augment n interval 1 live real ((Const.POWER.[major.ring + 1] - 1) / 2) true major |> ignore
-    ((live, nLive), real, nReal2, bit, realTerm, major, d, b1, b2)
+    ((live, nLive), real, nReal2, major, d, b1, b2)
 
-  let updateLive (twin, real, nReal, _, _, (major : Const.TpGConfMajor), ap, _, _) =
+  let updateLive (twin, real, nReal, (major : Const.TpGConfMajor), ap, _, _) =
     let isUpdate ncols ((live : int array), nLive) nReal =
       let mutable newnlive = 0
       let ret =
@@ -327,7 +327,7 @@ module DReduce =
           1
       (1 = ret, 0 = newnlive, (live, newnlive))
     let (b1, b2, twin2) = isUpdate (major.ncodes) twin nReal
-    (twin2, real, 0, 1y, 0, major, ap, b1, b2)
+    (twin2, real, 0, major, ap, b1, b2)
 
 
 module CReduce =
@@ -388,13 +388,13 @@ module Re =
   let private makeLive ((major : Const.TpGConfMajor), ap) =
     let (_, _, an, _, _, _) = ap
     let real = Array.replicate (Const.SIMATCHNUMBER[Const.MAXRING] / 8 + 1) -1y
-    (MLive.run an major, real, 0, 1y, 0, major, ap, false, false): Const.TpLiveState
+    (MLive.run an major, real, 0, major, ap, false, false): Const.TpLiveState
 
   let private chkDReduce : Const.TpLiveState -> Const.TpLiveState =
-    let p (_, _, _, _, _, _, _, b1, _) = b1
+    let p (_, _, _, _, _, b1, _) = b1
     until p (DReduce.testMatch >> DReduce.updateLive)
 
-  let private chkCReduce (twin, _, _, _, _, major, ap, _, b2) =
+  let private chkCReduce (twin, _, _, major, ap, _, b2) =
     if b2 then ()  // D可約 のときはスルー
     else       CReduce.run major twin ap
     b2
