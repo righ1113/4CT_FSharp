@@ -29,29 +29,6 @@ module Const =
 
 
 module EdgeNo =
-  exception Continue
-  exception Break
-  exception Return of int
-  let private inInterval (grav: int array) (don: bool array) =
-    try
-      let d = grav.[1] in
-      let mutable first = 1 in
-      while first < d && not don.[grav.[first + 1]] do first <- first + 1
-      if first = d then raise (Return (if don.[grav.[d + 1]] then 1 else 0));
-      let mutable last = first in
-      while last < d && don.[grav.[last + 2]] do last <- last + 1
-      let mutable length = last - first + 1 in
-      if last  = d then raise (Return length);
-      if first > 1 then
-        for j = last + 2 to d do if don.[grav.[j + 1]] then raise (Return 0)
-        raise (Return length)
-      let mutable worried = false in
-      for j = last + 2 to d do
-        if don.[grav.[j + 1]] then length <- length + 1; worried <- true
-        else if worried then raise (Return 0)
-      length
-    with
-    | Return x -> x;
   // 1. strip()
   let run (gConf: int array array) (major: Const.TpGConfMajor) =
     let verts, ring  = major.verts, major.ring
@@ -66,67 +43,21 @@ module EdgeNo =
     let mutable term  = major.term
     // stripSub2
     let mutable best = 1
-    let max = Array.replicate Const.MVERTS 0
-    (* 2. *)
-    for _ = (ring + 1) to verts do
-      let mutable maxint, maxes = 0, 0
-      (* 2_1. *)
-      for v = (ring + 1) to verts do
-        try
-          if done0.[v] then raise Continue;
-          let inter = inInterval gConf.[v + 2] done0 in
-          if inter > maxint then
-            maxint <- inter; maxes <- 1; max.[1] <- v
-          else
-            if inter = maxint then maxes <- maxes + 1; max.[maxes] <- v
-        with
-        | Continue -> ()
-      let mutable maxdeg = 0
-      (* 2_2. *)
-      for h = 1 to maxes do
-        let d = gConf.[max.[h] + 2].[1] in
-        if d > maxdeg then maxdeg <- d; best <- max.[h]
-      let grav = gConf.[best + 2]
-      let d = grav.[1]
-      let mutable first, previous = 1, done0.[grav.[d + 1]]
-      (* 2_3. *)
-      try
-        while previous || not done0.[grav.[first + 1]] do
-          previous <- done0.[grav.[first + 1]]
-          first    <- first + 1;
-          if first > d then first <- 1; raise Break
-      with
-      | Break -> ()
-      let mutable h = first
-      (* 2_4. *)
-      try
-        while done0.[grav.[h + 1]] do
-          edgeNo.[best].[grav.[h+1]] <- term
-          edgeNo.[grav.[h+1]].[best] <- term
-          term <- term - 1
-          if h = d then
-            if first = 1 then raise Break
-            h <- 0
-          h <- h + 1
-      with
-      | Break -> ()
-      done0.[best] <- true
+    term <- LibReduceStrip.StripSub2(Const.MVERTS, gConf, verts, ring, edgeNo, done0, term)
     // stripSub3
     // Now we must list the edges between the interior and the ring
     let mutable maxint = 0
     for _ = 1 to ring do
       maxint <- 0
       for v = 1 to ring do
-        try
-          if done0.[v] then raise Continue;
+        if done0.[v] then ()
+        else
           let u        = if v > 1     then v - 1 else ring
           let w        = if v < ring  then v + 1 else 1
           let doneIntU = if done0.[u] then 1     else 0
           let doneIntW = if done0.[w] then 1     else 0
           let inter    = 3 * gConf.[v+2].[1] + 4 * (doneIntU + doneIntW)
           if inter > maxint then maxint <- inter; best <- v
-        with
-        | Continue -> ()
       let grav, u = gConf.[best+2], if best > 1 then best - 1 else ring
       if done0.[u] then
         for h = grav.[0+1] - 1 downto 2 do
@@ -139,7 +70,7 @@ module EdgeNo =
           edgeNo.[grav.[h+1]].[best] <- term
           term <- term - 1
       done0.[best] <- true
-    // --
+    // output
     (gConf, (major : Const.TpGConfMajor), edgeNo)
 
 
@@ -319,89 +250,13 @@ module MLive =
 
 
 module DReduce =
-  exception Continue
-  exception Return of int
   let private interval    = Array.replicate 10 0
   let private weight      = Array.init 16 (fun _ -> Array.zeroCreate 4)
   let private matchweight = Array.init 16 (fun _ -> Array.init 16 (fun _ -> Array.zeroCreate 4))
   let mutable private nReal2, bit2, realTerm2 = 0, 1y, 0
-  let isStillReal col (choice : int array) depth (live : int array) on =
-    let mutable nTwisted = 0
-    let mutable nUnTwisted = 0
-    let mutable twoPower = 1
-    let mutable mark = 1
-    let twisted   = Array.replicate 64 0
-    let unTwisted = Array.replicate 64 0
-    let sum       = Array.replicate 64 0
-    try
-      if col < 0 then
-        if 0 = live.[-col] then raise (Return 0)
-        twisted.[nTwisted] <- -col
-        nTwisted <- nTwisted + 1
-        sum.[0] <- col
-      else
-        if 0 = live.[col] then raise (Return 0)
-        unTwisted.[nUnTwisted] <- col
-        nUnTwisted <- nUnTwisted + 1
-        sum.[0] <- col
-      for i = 2 to depth do
-        for j = 0 to twoPower - 1 do
-          let b = sum.[j] - choice.[i]
-          if b < 0 then
-            if 0 = live.[-b] then raise (Return 0)
-            twisted.[nTwisted] <- -b
-            nTwisted <- nTwisted + 1
-            sum.[mark] <- b
-          else
-            if 0 = live.[b] then raise (Return 0)
-            unTwisted.[nUnTwisted] <- b
-            nUnTwisted <- nUnTwisted + 1
-            sum.[mark] <- b
-          mark <- mark + 1
-        twoPower <- twoPower <<< 1
-      if on then
-        for i = 0 to nTwisted - 1   do live.[twisted.[i]]   <- live.[twisted.[i]]   ||| 8
-        for i = 0 to nUnTwisted - 1 do live.[unTwisted.[i]] <- live.[unTwisted.[i]] ||| 4
-      else
-        for i = 0 to nTwisted - 1   do live.[twisted.[i]]   <- live.[twisted.[i]]   ||| 2
-        for i = 0 to nUnTwisted - 1 do live.[unTwisted.[i]] <- live.[unTwisted.[i]] ||| 2
-      1
-    with
-    | Return x -> x
-
-  let checkReality depth live (real : int8 array) baseCol on (major : Const.TpGConfMajor) =
-    let nBits = 1 <<< (depth - 1)
-    let choice = Array.replicate 8 0
-    for k = 0 to nBits - 1 do
-      try
-        if 0y = bit2 then
-          bit2 <- 1y; realTerm2 <- realTerm2 + 1
-          Debug.Assert((realTerm2 <= major.nchar), "More than entries in real are needed")
-        if 0y = (bit2 &&& real.[realTerm2]) then bit2 <- bit2 <<< 1; raise Continue
-        let mutable col    = baseCol
-        let mutable parity = major.ring &&& 1
-        let mutable left   = k
-        for i = 1 to depth - 1 do
-          // /* i.e. if a_i=1, where k=a_1+2a_2+4a_3+... */
-          if 0 <> (left &&& 1) then
-            parity <- parity ^^^ 1; choice.[i] <- weight.[i].[1]; col <- col + weight.[i].[3]
-          else
-                                    choice.[i] <- weight.[i].[0]; col <- col + weight.[i].[2]
-          left <- left >>> 1
-        if 0 <> parity then
-          choice.[depth] <- weight.[depth].[1]; col <- col + weight.[depth].[3]
-        else
-          choice.[depth] <- weight.[depth].[0]; col <- col + weight.[depth].[2]
-        if 0 = isStillReal col choice depth live on then real.[realTerm2] <- real.[realTerm2] ^^^ bit2
-        else nReal2 <- nReal2 + 1
-        bit2 <- bit2 <<< 1
-      with
-      | Continue -> ()
-    true
   let rec augment n (interval2 : int array) depth live real baseCol on (major : Const.TpGConfMajor) =
     let on2 = if on then 1 else 0
     LibReduceUpdate.Checkreality(depth, weight, live, real, &nReal2, major.ring, baseCol, on2, &bit2, &realTerm2, major.nchar)
-    //checkReality depth live real baseCol on major |> ignore
     let mutable newN = 0
     let newInterval = Array.replicate 10 0
     for r = 1 to n do

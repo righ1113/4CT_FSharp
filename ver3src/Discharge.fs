@@ -42,6 +42,11 @@ module CaseSplit =
   let private symXxx = Array.zeroCreate (Const.MAXSYM + 1)
   let sym : Const.TpPosout = {number = symNum; nolines = symNol; value = symVal; pos = symPos; plow = symLow; pupp = symUpp; xx = symXxx}
   let mutable nosym: int = 0
+  let rec downNosym lev =
+    if nosym < 1 || sym.nolines.[nosym - 1] - 1 < lev then
+      printfn "  nosym: %d" nosym; ()
+    else
+      nosym <- nosym - 1; downNosym lev
   let run deg (ax : Const.TpAxle) n m lineCnt =
     ax.low.[ax.lev+1] <- Array.copy ax.low.[ax.lev]
     ax.upp.[ax.lev+1] <- Array.copy ax.upp.[ax.lev]
@@ -83,12 +88,6 @@ module CaseSplit =
     mm.[ax.lev + 1] <- 0
     if good then nosym <- nosym + 1
     {ax with lev = ax.lev + 1}
-
-  let rec downNosym lev =
-    if nosym < 1 || sym.nolines.[nosym - 1] - 1 < lev then
-      printfn "  nosym: %d" nosym; ()
-    else
-      nosym <- nosym - 1; downNosym lev
 
 
 module Apply =
