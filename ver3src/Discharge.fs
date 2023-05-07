@@ -280,8 +280,8 @@ module Dischg =
     try
       let mutable pos, allowedch2 = pos0, allowedch
       while s.[pos] < 99 do
-        try
-          if s.[pos] <> 0 || posout.value.[pos] < 0 then pos <- pos + 1; raise Continue
+        if s.[pos] <> 0 || posout.value.[pos] < 0 then pos <- pos + 1
+        else
           // /* accepting positioned outlet PO, computing AA */
           let x = posout.xx.[pos]
           let axlesLow = Array.init (Const.MAXLEV + 1) (fun _ -> Array.zeroCreate Const.CARTVERT)
@@ -311,8 +311,6 @@ module Dischg =
           if allowedch2 + forcedch <= maxch then
             raise (Return 1) // ★★★ ここから脱出するしかない
           pos <- pos + 1
-        with
-        | Continue -> ()
       0
     with
     | Return x -> x

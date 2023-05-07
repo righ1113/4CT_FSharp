@@ -22,7 +22,7 @@ module Const =
   type TpAngle       = int array array
   type TpedgeNo      = int array array
   type TpGConfMajor  = {verts: int; ring: int; term: int; edges: int; claim: int; cont0: int; contE: int; bigno: int; ncodes: int; nchar: int;}
-  type TpAnglePack   = int array array * TpedgeNo * TpAngle * TpAngle * TpAngle * int array
+  type TpAnglePack   = TpAngle * TpAngle * TpAngle * int array
   type TpLiveTwin    = int array * int
   type TpLiveState   = TpLiveTwin * int8 array * int * TpGConfMajor * TpAnglePack * bool * bool
   type TpConfFmt     = JsonProvider<"[[[1]]]">
@@ -141,7 +141,7 @@ module Angles =
           v <- v + 1
         with
         | Continue -> v <- v + 1; ()
-      Debug.Assert((1 = 2), "***  ERROR: CONTRACT HAS NO TRIAD  ***")
+      Debug.Assert(false, "***  ERROR: CONTRACT HAS NO TRIAD  ***")
       0 // ここには来ない
     with
     | Return x -> x
@@ -174,7 +174,7 @@ module Angles =
     anglesSub2 gConf edgeNo |> ignore
     // findanglesSub3
     anglesSub3 gConf major.verts major.ring |> ignore
-    (gConf, edgeNo, angle, diffangle, sameangle, contract) : Const.TpAnglePack
+    (angle, diffangle, sameangle, contract) : Const.TpAnglePack
 
 
 module MLive =
@@ -254,7 +254,7 @@ module DReduce =
   let private weight      = Array.init 16 (fun _ -> Array.zeroCreate 4)
   let private matchweight = Array.init 16 (fun _ -> Array.init 16 (fun _ -> Array.zeroCreate 4))
   let mutable private nReal2, bit2, realTerm2 = 0, 1y, 0
-  let rec augment n (interval2 : int array) depth live real baseCol on (major : Const.TpGConfMajor) =
+  let rec private augment n (interval2 : int array) depth live real baseCol on (major : Const.TpGConfMajor) =
     let on2 = if on then 1 else 0
     LibReduceUpdate.Checkreality(depth, weight, live, real, &nReal2, major.ring, baseCol, on2, &bit2, &realTerm2, major.nchar)
     let mutable newN = 0
@@ -271,7 +271,7 @@ module DReduce =
           if i > j + 1     then newN <- newN + 1; newInterval.[h] <- j + 1; h <- h + 1; newInterval.[h] <- i - 1
           augment newN newInterval (depth + 1) live real baseCol on major |> ignore
     true
-  let testMatch ((live, nLive), real, nReal, (major : Const.TpGConfMajor), d, b1, b2) =
+  let testMatch ((live, _) as twin, real, nReal, (major : Const.TpGConfMajor), ap, b1, b2) =
     // /* "nReal" will be the number of balanced signed matchings such that all associated colourings belong to "live",
     // * ie the total number of nonzero bits in the entries of "real" */
     let mutable n = 0
@@ -289,7 +289,7 @@ module DReduce =
       for b = 1 to a - 1 do
         n <- 0;
         for h = 0 to 3 do weight.[1].[h] <- matchweight.[a].[b].[h]
-        if b >= 3 then     n <- 1;     interval.[1] <- 1;             interval.[2]     <- b - 1
+        if b >= 3     then n <- 1;     interval.[1] <- 1;             interval.[2]     <- b - 1
         if a >= b + 3 then n <- n + 1; interval.[2 * n - 1] <- b + 1; interval.[2 * n] <- a - 1
         augment n interval 1 live real 0 false major |> ignore
     // /* now, the matchings using an edge incident with "ring" */
@@ -302,10 +302,10 @@ module DReduce =
     for b = 1 to major.ring - 1 do
       n <- 0;
       for h = 0 to 3 do weight.[1].[h] <- matchweight.[major.ring].[b].[h]
-      if b >= 3 then              n <- 1;     interval.[1] <- 1;             interval.[2]     <- b - 1
+      if b >= 3              then n <- 1;     interval.[1] <- 1;             interval.[2]     <- b - 1
       if major.ring >= b + 3 then n <- n + 1; interval.[2 * n - 1] <- b + 1; interval.[2 * n] <- major.ring - 1
       augment n interval 1 live real ((Const.POWER.[major.ring + 1] - 1) / 2) true major |> ignore
-    ((live, nLive), real, nReal2, major, d, b1, b2)
+    (twin, real, nReal2, major, ap, b1, b2)
 
   let updateLive (twin, real, nReal, (major : Const.TpGConfMajor), ap, _, _) =
     let isUpdate ncols ((live : int array), nLive) nReal =
@@ -331,7 +331,7 @@ module DReduce =
 
 
 module CReduce =
-  let run (major : Const.TpGConfMajor) ((live : int array), nLive) ((_, _, _, diffangle, sameangle, contract) : Const.TpAnglePack) =
+  let run (major : Const.TpGConfMajor) ((live : int array), nLive) ((_, diffangle, sameangle, contract) : Const.TpAnglePack) =
     Debug.Assert((contract.[0] <> 0),              "       ***  ERROR: NO CONTRACT PROPOSED  ***\n\n")
     Debug.Assert((nLive = contract.[Const.EDGES]), "       ***  ERROR: DISCREPANCY IN EXTERIOR SIZE  ***\n\n")
     let mutable start = diffangle.[0].[2]
@@ -385,8 +385,7 @@ module Re =
   let private makeAngle (gConf, (major : Const.TpGConfMajor), edgeNo) =
     (major, Angles.run gConf edgeNo major)
 
-  let private makeLive ((major : Const.TpGConfMajor), ap) =
-    let (_, _, an, _, _, _) = ap
+  let private makeLive ((major : Const.TpGConfMajor), ((an, _, _, _) as ap : Const.TpAnglePack)) =
     let real = Array.replicate (Const.SIMATCHNUMBER[Const.MAXRING] / 8 + 1) -1y
     (MLive.run an major, real, 0, major, ap, false, false): Const.TpLiveState
 
@@ -401,7 +400,7 @@ module Re =
 
   let reduce =
     gConfs |> Array.take 12 |> Array.map (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce >> chkCReduce)
-    // let (liveTwin, _, _, _, _, _, _, b1, b2) = gConfs.[10] |> (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce)
+    // let (liveTwin, _, _, _, _, b1, b2) = gConfs.[10] |> (makeGConfMajor >> makeEdgeNo >> makeAngle >> makeLive >> chkDReduce)
     // (b1, b2)
 
 
