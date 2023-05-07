@@ -268,7 +268,6 @@ module Rules =
 
 
 module Dischg =
-  exception Continue
   exception Return of int
   // let private readFileRulesD =
   //   let ind = Const.TpDiRules.Parse <| File.ReadAllText "data/DiRules07.txt"
@@ -318,15 +317,13 @@ module Dischg =
     // 1. compute forced and permitted rules, allowedch, forcedch, update s
     let mutable forcedch, allowedch, i = 0, 0, 0
     while s.[i] < 99 do
-      try
-        if   s.[i] > 0           then forcedch <- forcedch + posout.value.[i]
-        if   s.[i] <> 0          then i <- i + 1; raise Continue
+      if   s.[i] > 0 then forcedch <- forcedch + posout.value.[i]; i <- i + 1
+      elif s.[i] < 0 then                                          i <- i + 1
+      else
         if   0 <> Apply.outletForced    deg ax posout i posout.xx.[i] then s.[i] <-  1; forcedch <- forcedch + posout.value.[i]
         elif 0 =  Apply.outletPermitted deg ax posout i posout.xx.[i] then s.[i] <- -1
         elif posout.value.[i] > 0 then allowedch <- allowedch + posout.value.[i]
         i <- i + 1
-      with
-      | Continue -> ()
     // 2. print omitted
     // liftIO $ printf "%d POs: " depth
     // liftIO $ dischargeCoreSub2 0 s rules posoutX
