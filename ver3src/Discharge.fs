@@ -184,8 +184,6 @@ module Adjmat =
 
 
 module Rules =
-  exception Continue
-  exception Return of int
   let private symNum = Array.zeroCreate (Const.MAXOUTLETS * 2)
   let private symNol = Array.zeroCreate (Const.MAXOUTLETS * 2)
   let private symVal = Array.zeroCreate (Const.MAXOUTLETS * 2)
@@ -205,19 +203,19 @@ module Rules =
     posout.value.[index] <- if number > 0 then 1 else -1
     k                    <- if number > 0 then 1 else 0
     posout.pos.[index].[0] <- 1
-    try
-      // # compute phi
-      let mutable i = 0
-      for j = 0 to zzz.[0] - 1 do
-        try
-          posout.plow.[index].[i] <- bbb.[j] / 10
-          posout.pupp.[index].[i] <- bbb.[j] % 10
-          if posout.pupp.[index].[i] = 9 then posout.pupp.[index].[i] <- Const.INFTY
-          if posout.plow.[index].[i] = 0 then posout.plow.[index].[i] <- posout.pupp.[index].[i]
-          if j = k then
-            if not (posout.plow.[index].[i] <= deg && deg <= posout.pupp.[index].[i]) then raise (Return 0)
-            // # if above true then outlet cannot apply for this degree
-            raise Continue
+    // # compute phi
+    let mutable i = 0
+    let rec loop j =
+      if j >= zzz.[0] then 1
+      else
+        posout.plow.[index].[i] <- bbb.[j] / 10
+        posout.pupp.[index].[i] <- bbb.[j] % 10
+        if posout.pupp.[index].[i] = 9 then posout.pupp.[index].[i] <- Const.INFTY
+        if posout.plow.[index].[i] = 0 then posout.plow.[index].[i] <- posout.pupp.[index].[i]
+        if j = k then
+          if not (posout.plow.[index].[i] <= deg && deg <= posout.pupp.[index].[i]) then 0
+          else loop (j + 1) // contine # if above true then outlet cannot apply for this degree
+        else
           let mutable u = 0
           if j >= 2 then // # now computing T->pos[i]
             u <- phi.[xxx.[zzz.[j]]]
@@ -227,13 +225,8 @@ module Rules =
           u <- posout.pos.[index].[i]
           // # update adjmat
           if u <= deg && posout.plow.[index].[i] = posout.pupp.[index].[i] then Adjmat.doFan deg u posout.plow.[index].[i]
-          i <- i + 1
-        with
-        | Continue -> ()
-      // # Condition (T4) is checked in CheckIso
-      1
-    with
-    | Return x -> x
+          i <- i + 1; loop (j + 1)
+    loop 0
   let readFileRulesD2 =
     let mutable out = [||]
     let ind = Const.TpDiRules2.Parse <| File.ReadAllText "data/DiRules.txt"
