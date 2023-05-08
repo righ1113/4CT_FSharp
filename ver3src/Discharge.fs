@@ -268,51 +268,49 @@ module Rules =
 
 
 module Dischg =
-  exception Return of int
   // let private readFileRulesD =
   //   let ind = Const.TpDiRules.Parse <| File.ReadAllText "data/DiRules07.txt"
   //   {number = ind.A; nolines = ind.B; value = ind.C; pos = ind.D; plow = ind.E; pupp = ind.F; xx = ind.G} : Const.TpPosout
   let mutable private posout =
     {number = null; nolines = null; value = null; pos = null; plow = null; pupp = null; xx = null} : Const.TpPosout
   let mutable private initEnd = false
-  let rec private dischgCoreSub5 deg (ax : Const.TpAxle) forcedch allowedch (s : int array) maxch pos0 depth =
-    try
-      let mutable pos, allowedch2 = pos0, allowedch
-      while s.[pos] < 99 do
-        if s.[pos] <> 0 || posout.value.[pos] < 0 then pos <- pos + 1
+  let rec private dischgCoreSub5 deg (ax0 : Const.TpAxle) forcedch allowedch0 (s : int array) maxch pos0 depth =
+    let mutable allowedch = allowedch0
+    let rec loop pos =
+      if   s.[pos] >= 99 then 0
+      elif s.[pos] <> 0 || posout.value.[pos] < 0 then loop (pos + 1) // continue
+      else
+        // /* accepting positioned outlet PO, computing AA */
+        let x = posout.xx.[pos]
+        let axlesLow = Array.init (Const.MAXLEV + 1) (fun _ -> Array.zeroCreate Const.CARTVERT)
+        let axlesUpp = Array.init (Const.MAXLEV + 1) (fun _ -> Array.zeroCreate Const.CARTVERT)
+        let ax = {low = axlesLow; upp = axlesUpp; lev = ax0.lev} : Const.TpAxle
+        ax.low.[ax.lev] <- Array.copy ax0.low.[ax0.lev]
+        ax.upp.[ax.lev] <- Array.copy ax0.upp.[ax0.lev]
+        for i = 0 to posout.nolines.[pos] - 1 do
+          let mutable p = posout.pos.[pos].[i]
+          p <- if x - 1 + (p - 1) % deg < deg then p + x - 1 else p + x - 1 - deg
+          if (posout.plow.[pos].[i] > ax.low.[ax.lev].[p]) then ax.low.[ax.lev].[p] <- posout.plow.[pos].[i]
+          if (posout.pupp.[pos].[i] < ax.upp.[ax.lev].[p]) then ax.upp.[ax.lev].[p] <- posout.pupp.[pos].[i]
+          Debug.Assert((ax.low.[ax.lev].[p] <= ax.upp.[ax.lev].[p]), "Unexpected error 321")
+        // /* Check if a previously rejected positioned outlet is forced to apply */
+        let mutable good = true
+        for i = 0 to pos - 1 do
+          if s.[i] = -1 && 0 <> Apply.outletForced deg ax posout i posout.xx.[i] then good <- false
+        if good then
+          // recursion with PO forced
+          let mutable sPrime = Array.replicate (Array.length s) 0
+          sPrime <- Array.copy s
+          sPrime.[pos] <- 1
+          dischgCore deg ax sPrime maxch (pos + 1) (depth + 1)
+        // rejecting positioned outlet PO
+        s[pos] <- -1
+        allowedch <- allowedch - posout.value.[pos]
+        if allowedch + forcedch <= maxch then
+          1 // ★★★ ここから脱出するしかない
         else
-          // /* accepting positioned outlet PO, computing AA */
-          let x = posout.xx.[pos]
-          let axlesLow = Array.init (Const.MAXLEV + 1) (fun _ -> Array.zeroCreate Const.CARTVERT)
-          let axlesUpp = Array.init (Const.MAXLEV + 1) (fun _ -> Array.zeroCreate Const.CARTVERT)
-          let ax2 = {low = axlesLow; upp = axlesUpp; lev = ax.lev} : Const.TpAxle
-          ax2.low.[ax2.lev] <- Array.copy ax.low.[ax.lev]
-          ax2.upp.[ax2.lev] <- Array.copy ax.upp.[ax.lev]
-          for i = 0 to posout.nolines.[pos] - 1 do
-            let mutable p = posout.pos.[pos].[i]
-            p <- if x - 1 + (p - 1) % deg < deg then p + x - 1 else p + x - 1 - deg
-            if (posout.plow.[pos].[i] > ax2.low.[ax2.lev].[p]) then ax2.low.[ax2.lev].[p] <- posout.plow.[pos].[i]
-            if (posout.pupp.[pos].[i] < ax2.upp.[ax2.lev].[p]) then ax2.upp.[ax2.lev].[p] <- posout.pupp.[pos].[i]
-            Debug.Assert((ax2.low.[ax2.lev].[p] <= ax2.upp.[ax2.lev].[p]), "Unexpected error 321")
-          // /* Check if a previously rejected positioned outlet is forced to apply */
-          let mutable good = true
-          for i = 0 to pos - 1 do
-            if s.[i] = -1 && 0 <> Apply.outletForced deg ax2 posout i posout.xx.[i] then good <- false
-          if good then
-            // recursion with PO forced
-            let mutable sPrime = Array.replicate (Array.length s) 0
-            sPrime <- Array.copy s
-            sPrime.[pos] <- 1
-            dischgCore deg ax2 sPrime maxch (pos + 1) (depth + 1)
-          // rejecting positioned outlet PO
-          s[pos] <- -1
-          allowedch2 <- allowedch2 - posout.value.[pos]
-          if allowedch2 + forcedch <= maxch then
-            raise (Return 1) // ★★★ ここから脱出するしかない
-          pos <- pos + 1
-      0
-    with
-    | Return x -> x
+          loop (pos + 1)
+    loop pos0
   and private dischgCore deg (ax: Const.TpAxle) (s : int array) maxch pos depth =
     // 1. compute forced and permitted rules, allowedch, forcedch, update s
     let mutable forcedch, allowedch, i = 0, 0, 0
@@ -342,7 +340,6 @@ module Dischg =
     else
       // 6. error
       Debug.Assert(false, "Unexpected error 101")
-
   let run deg (ax : Const.TpAxle) strL =
     // init
     if initEnd = false then
