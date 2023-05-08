@@ -462,7 +462,7 @@ module Di =
     | (deg, (ax : Const.TpAxle), (_ :: "R" :: _) :: tailTac, lineCnt) ->
         let ax1_2 = LibDischargeReduce.TpAxle(low = ax.low, upp = ax.upp, lev = ax.lev)
         let ret   = LibDischargeReduce.Reduce(ax1_2)
-        printfn "##### rRet: %b #####" ret.retB
+        printfn "########## rRet: %b ##########" ret.retB
         (deg, {ax with lev = ax.lev - 1}, tailTac, lineCnt + 1)
     | _ -> x
 
